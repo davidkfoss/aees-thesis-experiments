@@ -6,7 +6,6 @@ import argparse
 from pathlib import Path
 import os
 import random
-import shutil
 import sys
 import time
 
@@ -409,21 +408,12 @@ def ensure_tokenized_agnews_dataset(config: ExperimentConfig) -> Path:
         config.label_noise_seed,
     )
     if not train_dir.exists():
-        reset_generated_split_dir(train_dir)
         train_dataset_to_save.save_to_disk(str(train_dir))
     if not val_dir.exists():
-        reset_generated_split_dir(val_dir)
         train_val_split["test"].save_to_disk(str(val_dir))
     if not test_dir.exists():
         tokenized_dataset["test"].save_to_disk(str(test_dir))
     return tokenized_dir
-
-
-def reset_generated_split_dir(path: Path) -> None:
-    """Remove a partial generated split directory before saving it again."""
-
-    if path.exists():
-        shutil.rmtree(path)
 
 
 def build_dataloaders(config: ExperimentConfig) -> tuple[DataLoader, DataLoader]:

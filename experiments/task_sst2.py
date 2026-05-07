@@ -477,12 +477,6 @@ def build_model(config: ExperimentConfig, device: torch.device) -> nn.Module:
     return model.to(device)
 
 
-def build_context_bucket_names(context_mode: str) -> list[str] | None:
-    """Return the bucket names for one shared context mode."""
-
-    return list(TREND_CONTEXT_BUCKETS) if context_mode == "trend" else None
-
-
 def format_axis_value(value: float) -> str:
     """Format one axis value for concise initialization logs."""
 
@@ -531,11 +525,10 @@ def build_axis_controller(
         return RandomController(n_arms=len(arm_values), random_seed=random_seed)
     if method != "AdaptiveScheduler":
         raise ValueError(f"Unsupported structured method: {method}")
-    bucket_names = build_context_bucket_names(context_mode)
-    if bucket_names is not None:
+    if context_mode == "trend":
         return BucketedContextualController(
             n_arms=len(arm_values),
-            bucket_names=bucket_names,
+            bucket_names=list(TREND_CONTEXT_BUCKETS),
             random_seed=random_seed,
             prior_from_global=True,
         )
