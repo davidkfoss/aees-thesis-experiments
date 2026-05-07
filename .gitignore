@@ -1,0 +1,34 @@
+# Virtual environments
+.venv/
+
+# Python bytecode and caches
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+.ipynb_checkpoints/
+
+# Local editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.aux
+*.pdf
+
+# Generated dataset contents
+data/*
+!data/.gitkeep
+
+# Generated experiment results
+results/*
+!results/.gitkeep
+!results/README.md
+
+# Environment / secrets
+.env
+
+# Hugging Face cache (datasets, models, hub)
+.hf_cache/
