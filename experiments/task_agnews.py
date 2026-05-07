@@ -123,7 +123,7 @@ def parse_args() -> ExperimentConfig:
     )
     parser.add_argument(
         "--context-mode",
-        choices=["none", "trend", "trend_phase"],
+        choices=["none", "trend"],
         default=str(DEFAULT_CONFIG["context_mode"]),
     )
     parser.add_argument(
@@ -144,7 +144,8 @@ def parse_args() -> ExperimentConfig:
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--hf-token", type=str,
                         default=DEFAULT_CONFIG["hf_token"])
-    parser.add_argument("--run-tag", type=str, default=DEFAULT_CONFIG["run_tag"])
+    parser.add_argument("--run-tag", type=str,
+                        default=DEFAULT_CONFIG["run_tag"])
     parser.add_argument(
         "--label-noise-rate",
         type=float,
@@ -327,7 +328,8 @@ def corrupt_agnews_labels(dataset, noise_rate: float, noise_seed: int):
     replacement_labels: dict[int, int] = {}
     for index in sorted(corrupted_indices):
         original_label = int(dataset[index]["label"])
-        choices = [label for label in range(AGNEWS_NUM_LABELS) if label != original_label]
+        choices = [label for label in range(
+            AGNEWS_NUM_LABELS) if label != original_label]
         replacement_labels[index] = rng.choice(choices)
 
     def corrupt_example(example: dict[str, object], index: int) -> dict[str, object]:
@@ -429,7 +431,8 @@ def build_dataloaders(config: ExperimentConfig) -> tuple[DataLoader, DataLoader]
 
     _, load_from_disk, AutoTokenizer, _, DataCollatorWithPadding = import_agnews_modules()
     tokenized_dir = ensure_tokenized_agnews_dataset(config)
-    train_dataset = load_from_disk(str(get_train_split_dir(tokenized_dir, config)))
+    train_dataset = load_from_disk(
+        str(get_train_split_dir(tokenized_dir, config)))
     val_dataset = load_from_disk(str(get_validation_split_dir(tokenized_dir)))
     tokenizer = retry_with_backoff(
         lambda: AutoTokenizer.from_pretrained(
@@ -502,7 +505,6 @@ def run_experiment(config: ExperimentConfig) -> RunResult:
     components = build_method_components(
         config,
         model,
-        total_training_steps=total_training_steps,
     )
     lr_scheduler = build_lr_scheduler(
         config,

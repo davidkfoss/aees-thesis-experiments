@@ -24,7 +24,6 @@ from pulseopt.controller import (  # noqa: E402
     DiscountedUCBController,
     RandomController,
     TREND_CONTEXT_BUCKETS,
-    TREND_PHASE_CONTEXT_BUCKETS,
 )
 from pulseopt.episode import StructuredEpisodeManager  # noqa: E402
 from pulseopt.modes import (  # noqa: E402
@@ -290,7 +289,7 @@ def parse_args() -> ExperimentConfig:
     )
     parser.add_argument(
         "--context-mode",
-        choices=["none", "trend", "trend_phase"],
+        choices=["none", "trend"],
         default=str(DEFAULT_CONFIG["context_mode"]),
     )
     parser.add_argument(
@@ -314,7 +313,8 @@ def parse_args() -> ExperimentConfig:
         default=float(DEFAULT_CONFIG["label_noise_rate"]),
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--run-tag", type=str, default=DEFAULT_CONFIG["run_tag"])
+    parser.add_argument("--run-tag", type=str,
+                        default=DEFAULT_CONFIG["run_tag"])
     parser.add_argument(
         "--output",
         type=str,
@@ -617,11 +617,7 @@ def build_model(device: torch.device) -> nn.Module:
 def build_context_bucket_names(context_mode: str) -> list[str] | None:
     """Return the bucket names for one shared context mode."""
 
-    if context_mode == "none":
-        return None
-    if context_mode == "trend":
-        return list(TREND_CONTEXT_BUCKETS)
-    return list(TREND_PHASE_CONTEXT_BUCKETS)
+    return list(TREND_CONTEXT_BUCKETS) if context_mode == "trend" else None
 
 
 def format_axis_value(value: float) -> str:
@@ -738,7 +734,6 @@ def build_wrapped_optimizer(
 def build_method_components(
     config: ExperimentConfig,
     model: nn.Module,
-    total_training_steps: int,
 ) -> TrainingComponents:
     """Build optimizer, controller, and episode manager objects for one run."""
 
@@ -809,7 +804,6 @@ def build_method_components(
         episode_length=config.episode_length,
         structured_control_mode=config.structured_control_mode,
         context_mode=config.context_mode,
-        total_training_steps=total_training_steps if config.context_mode == "trend_phase" else None,
         context_trend_window=config.context_trend_window,
         context_trend_epsilon=config.context_trend_epsilon,
         ema_alpha=config.ema_alpha,
@@ -1240,7 +1234,6 @@ def run_experiment(config: ExperimentConfig) -> RunResult:
     components = build_method_components(
         config,
         model,
-        total_training_steps=len(train_loader) * config.epochs,
     )
     lr_scheduler = build_lr_scheduler(config, components.optimizer)
 
