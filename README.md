@@ -63,7 +63,7 @@ Library-side tests (controllers, episode manager, reward, scheduler) live with t
 - `experiments/utils/{flops,metrics,results,run_plan}.py` — experiment-side helpers (FLOP accounting, `RunResult` dataclass, JSON IO, run-plan/manifest helpers).
 - `scripts/tables/`, `scripts/plots/`, `scripts/report_*.py` — reporting over `results/`.
 - `tests/test_runtime_metrics.py` — runtime-metric derivation tests.
-- `data/`, `results/` — local dataset cache and run outputs (gitignored except `.gitkeep` and `results/README.md`).
+- `data/`, `results/` — local dataset cache and run outputs (gitignored except `.gitkeep`).
 
 ## Reproducibility notes
 
