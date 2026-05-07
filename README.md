@@ -2,7 +2,7 @@
 
 This repository contains the experiment runners, configurations, and result-processing scripts used for the thesis on **Adaptive Episodic Exploration Scheduling (AEES)** — a small per-axis bandit that adapts learning-rate multiplier and gradient-noise std per training "episode" on top of a standard optimizer backbone.
 
-The reusable AEES implementation is **not** in this repository. It is published on PyPI as [`pulseopt`](https://pypi.org/project/pulseopt/) and pulled in here as a normal dependency.
+The reusable AEES implementation is **not** in this repository. It is published on PyPI as [`pulseopt`](https://pypi.org/project/pulseopt/) and maintained at [`davidkfoss/pulseopt`](https://github.com/davidkfoss/pulseopt). This repository pulls it in as a normal dependency.
 
 ## Setup
 
@@ -67,7 +67,7 @@ Library-side tests (controllers, episode manager, reward, scheduler) live with t
 
 ## Reproducibility notes
 
-- Fixed run seeds and deterministic label-noise construction are used; seeds, label-noise protocols, scheduler settings, reward shaping, and gradient-noise generator construction live in `pulseopt` and the runners and are not altered by this repo.
+- Fixed run seeds and deterministic label-noise construction are used. Seed handling, label-noise protocols, scheduler settings, reward shaping, and gradient-noise generator construction are defined by `pulseopt` and the experiment runners.
 - Newer result files log hardware/software metadata under `runtime_metrics.hardware`: GPU name(s) and memory, Python version, PyTorch and CUDA versions, cuDNN version, plus the runner's `num_workers` and `pin_memory` settings.
 - Some older archived result files predate that capture and may not contain a complete hardware/software metadata block.
 - Exact epoch-level or bitwise reproduction across machines is not guaranteed: GPU architecture, CUDA/cuDNN kernels, PyTorch/torchvision versions, and DataLoader/runtime behavior can introduce small trajectory differences. The `pulseopt` dependency is pinned through `pyproject.toml`; bumping it changes the library version backing the runners.
@@ -76,7 +76,10 @@ Library-side tests (controllers, episode manager, reward, scheduler) live with t
 
 ## Library reference
 
-The `pulseopt` library API, quick-start, and design notes live with the package: <https://pypi.org/project/pulseopt/>.
+The reusable `pulseopt` package contains the public AEES API, quick-start examples, and design notes:
+
+- PyPI: <https://pypi.org/project/pulseopt/>
+- GitHub: <https://github.com/davidkfoss/pulseopt>
 
 ## License
 
