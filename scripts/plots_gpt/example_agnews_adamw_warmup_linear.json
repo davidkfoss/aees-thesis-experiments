@@ -1,0 +1,102 @@
+{
+  "accuracy_per_tflop": 0.00013938046384575644,
+  "best_val_accuracy": 0.9331666666666667,
+  "config": {
+    "base_lr": 5e-05,
+    "base_weight_decay": 0.01,
+    "batch_size": 16,
+    "cache_dir": ".hf_cache",
+    "context_mode": "none",
+    "context_trend_epsilon": 0.001,
+    "context_trend_window": 3,
+    "dataset_name": "AG News",
+    "device": "cuda",
+    "ema_alpha": 0.1,
+    "episode_length": 100,
+    "epochs": 5,
+    "fixed_mode_name": null,
+    "hf_token": null,
+    "label_noise_rate": 0.2,
+    "label_noise_seed": 42,
+    "label_noise_type": "symmetric",
+    "local_files_only": true,
+    "lr": 5e-05,
+    "lr_candidates": [
+      1.0
+    ],
+    "lr_scheduler": "warmup_linear",
+    "max_length": 128,
+    "method": "AdamW",
+    "mode_names": null,
+    "model_name": "distilbert-base-uncased",
+    "noise_candidates": [
+      0.0
+    ],
+    "noise_std": 0.01,
+    "num_workers": 0,
+    "output": "results/noisy_agnews_20_final/seed_2/agnews_noise20_adamw_warmup_linear_5ep_lr5e5_seed2.json",
+    "pretokenize_only": false,
+    "reward_clip_max": 1.0,
+    "reward_clip_min": -1.0,
+    "reward_epsilon": 1e-08,
+    "reward_instability_lambda": 0.0,
+    "scheduler_active": true,
+    "scheduler_span_steps": 33750,
+    "scheduler_step_unit": "optimizer_step",
+    "scheduler_t_max": null,
+    "seed": 2,
+    "structured_control_mode": "independent",
+    "task_name": "agnews",
+    "tokenized_dataset_dir": "data/agnews_tokenized",
+    "warmup_epochs": 0,
+    "weight_decay": 0.01
+  },
+  "controller_logs": null,
+  "dataset_name": "AG News",
+  "episode_logs": null,
+  "epoch_tflops": [
+    1341.736698273792,
+    1336.9266751488,
+    1339.132862570496,
+    1337.574427164672,
+    1339.733090402304
+  ],
+  "epoch_wall_clock_seconds": [
+    122.37567605357617,
+    116.91709444392473,
+    116.89106811769307,
+    116.7809975957498,
+    116.84983462560922
+  ],
+  "estimated_flops": 6695103753560064.0,
+  "final_train_loss": 0.6034252173205217,
+  "final_val_accuracy": 0.9065833333333333,
+  "method_name": "AdamW",
+  "model_name": "distilbert-base-uncased",
+  "seed": 2,
+  "task_name": "agnews",
+  "total_epochs": 5,
+  "total_steps": 33750,
+  "train_accuracies": [
+    0.7357962962962963,
+    0.7643703703703704,
+    0.7837314814814815,
+    0.8049537037037037,
+    0.8247222222222222
+  ],
+  "train_losses": [
+    0.8394152807107678,
+    0.7821417002699993,
+    0.7371414841722559,
+    0.6779617399507099,
+    0.6034252173205217
+  ],
+  "val_accuracies": [
+    0.92175,
+    0.9331666666666667,
+    0.929,
+    0.922,
+    0.9065833333333333
+  ],
+  "wall_clock_seconds": 589.8179427189752
+}
