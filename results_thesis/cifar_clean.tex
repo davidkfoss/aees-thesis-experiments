@@ -1,0 +1,23 @@
+\section{Clean \cifar{}}
+\label{sec:results-cifar-clean}
+
+The clean \cifar{} experiment evaluates whether \method{} provides benefits in a stable vision-training setting without synthetic label noise. This setting is useful as a control because the training labels are reliable and standard learning-rate decay schedules are already expected to perform strongly. \Cref{fig:cifar-clean-barplot} compares flat \adamw{}, scheduled \adamw{}, \method{}, and combinations of \method{} with standard schedules.
+
+\begin{figure}[t]
+    \centering
+    \thesisfigure{0.92\textwidth}{figures/cifar/clean_cifar_barplot.pdf}
+    \caption{
+        Clean \cifar{} validation accuracy. Solid bars show peak validation accuracy and hatched bars show final validation accuracy. \method{} improves over flat \adamw{}, but standard decay schedules already recover most of the gain.
+    }
+    \label{fig:cifar-clean-barplot}
+\end{figure}
+
+\input{tables/cifar_clean}
+
+On clean \cifar{}, \method{} improves over flat \adamw{} in peak validation accuracy, reaching 72.1\% compared with 70.3\% for \adamw{}. Standard decay schedules recover most of this improvement on their own: \adamw{} with cosine and linear decay reaches 72.8\% and 72.6\% peak accuracy, respectively. Combining \method{} with a scheduler gives the best or near-best results, with \method{} + linear reaching the highest peak accuracy at 72.9\%. The margin over scheduled \adamw{} is small, so in the clean setting \method{} is competitive with standard scheduling but not clearly superior to it.
+
+Although unscheduled \method{} reaches a strong peak, its final accuracy is lower and substantially more variable than the scheduled variants. The late-stage trajectories in Appendix~\ref{app:cifar-clean-diagnostics}, \Cref{fig:cifar-clean-aees-late-stage-seeds}, show intermittent validation drops in some seeds, including a sharp final-epoch drop in one run. This suggests that continued LR exploration can remain unstable late in training when it is not constrained by an explicit decay schedule. The clean \cifar{} results therefore support \method{} as a peak-performance mechanism, while also showing that final-checkpoint stability still depends on conventional decay or checkpoint selection.
+
+\input{tables/cifar_clean_fixed_ablation}
+
+The fixed-multiplier ablation tests whether the improvement from unscheduled \method{} can be explained simply by access to a better static learning-rate multiplier. \method{} reaches a higher peak validation accuracy than all fixed multipliers from the same candidate set, suggesting that adaptive LR modulation contributes beyond static LR rescaling. However, consistent with the instability discussed above, \method{} has lower and more variable final accuracy than the best fixed multiplier. The mean late-stage trajectories in Appendix~\ref{app:cifar-clean-diagnostics}, \Cref{fig:cifar-clean-fixed-vs-aees-late-stage}, further illustrate this pattern: the fixed multipliers are more stable near the end of training, while \method{} has higher late-stage variance. Thus, the clean \cifar{} results support \method{} as a peak-performance mechanism, but also show that explicit decay schedules are still needed for stable final checkpoints.

@@ -1,0 +1,35 @@
+\section{Result Table Conventions}
+\label{sec:result-table-conventions}
+
+The result tables use a common set of metric and formatting conventions. Unless otherwise
+stated, accuracy values are reported in percent as mean $\pm$ standard deviation across
+five random seeds. Runtime results are reported as mean $\pm$ standard deviation across
+three repeated timing runs using a fixed seed. In all label-noise experiments, noise is
+applied only to the training labels; validation labels remain clean.
+
+The validation metrics are denoted by $\accbest$, $\accfinal$, and $\dropmetric$.
+$\accbest$ is the highest validation accuracy reached during training, $\accfinal$ is
+the validation accuracy at the final epoch, and
+$\dropmetric = \accbest - \accfinal$ is the best-to-final validation decrease in
+percentage points. Lower $\dropmetric$ indicates greater final-checkpoint stability, but
+it is interpreted together with $\accbest$ and $\accfinal$ rather than as a standalone
+objective. Peak epoch denotes the epoch at which $\accbest$ was attained.
+
+Unless otherwise stated, bold and italics mark the best and second-best values within the
+relevant comparison block. In grouped tables, the comparison block is the optimizer block
+or task block; in ungrouped tables, it is the full table. Ties in the mean are resolved by
+lower standard deviation. When reported, $n$ denotes the number of included seeds or
+timing runs.
+
+For the \cifar{} experiments, both \adamw{} and \sgdm{} are evaluated. Rows are therefore
+grouped by base optimizer when both optimizers appear in the same table. In the final
+\cifar{} experiments, \method{} refers to the learning-rate-only variant unless an axis
+suffix is shown, because gradient-noise control was disabled after preliminary runs found
+it destabilizing in this setting.
+
+For the NLP fine-tuning experiments, all configurations use \adamw{} as the base optimizer.
+Warmup-linear denotes the standard Transformer learning-rate schedule with linear warmup
+and linear decay. In the main NLP tables, \method{} denotes the dual-axis variant unless
+an axis suffix is shown. Axis-ablation tables use \method{}-LR, \method{}-Noise, and
+\method{}-Dual to denote adaptation of only the learning-rate multiplier, only the
+gradient-noise magnitude, or both axes, respectively.
