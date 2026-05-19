@@ -45,14 +45,16 @@ NAME = "sst2_curves"
 VARIANTS = ("flat", "warmup_linear", "aees_dual", "warmup_linear_aees")
 
 # Display labels: optimizer is implied by the task (SST-2 is AdamW-only), so
-# drop the "AdamW" prefix from baselines and use the canonical LABEL strings.
-# The dual-axis AEES + warmup-linear combination disambiguates from the plain
-# AEES-Dual line.
+# drop the "AdamW" prefix from baselines. Throughout the NLP-noisy section of
+# the thesis the warmup-linear schedule is referred to simply as "Linear", and
+# combined methods use scheduler-first ordering ("Linear + AEES-Dual") for
+# consistency with the CIFAR figures.
+_LINEAR_LABEL = "Linear"
 DISPLAY: dict[str, str] = {
     "flat":               LABEL["flat"],
-    "warmup_linear":      LABEL["warmup_linear"],
+    "warmup_linear":      _LINEAR_LABEL,
     "aees_dual":          LABEL["aees_dual"],
-    "warmup_linear_aees": f"{LABEL['aees_dual']} + {LABEL['warmup_linear']}",
+    "warmup_linear_aees": f"{_LINEAR_LABEL} + {LABEL['aees_dual']}",
 }
 
 EXPECTED_SEEDS = (0, 1, 2, 3, 4)
@@ -164,15 +166,10 @@ def build(runs_root: pathlib.Path, out_dir: pathlib.Path) -> None:
         # Overplot marker-anchored line on top so each epoch has a marker.
         ax.plot(epochs_x, mean, color=color, **line_kw)
 
-        peak_idx = int(np.argmax(mean))
-        peak_xy = (float(epochs_x[peak_idx]), float(mean[peak_idx]))
-        final_xy = (float(epochs_x[-1]), float(mean[-1]))
-        mark_peak_final(ax, peak_xy, final_xy, color=color)
-
         all_means_min.append(float(mean.min()))
         all_means_max.append(float(mean.max()))
 
-        # Per-seed peak epoch (1-indexed) for the summary.
+        # Per-seed peak epoch (1-indexed) for the summary and marker.
         per_seed_peak_epoch = (np.argmax(accs_pct, axis=1) + 1).astype(float)
         per_seed_peak_val = accs_pct[np.arange(accs_pct.shape[0]),
                                      np.argmax(accs_pct, axis=1)]
@@ -182,6 +179,13 @@ def build(runs_root: pathlib.Path, out_dir: pathlib.Path) -> None:
         mean_peak_val = float(per_seed_peak_val.mean())
         mean_final_val = float(per_seed_final_val.mean())
         peak_to_final_drop = mean_peak_val - mean_final_val
+
+        # Peak marker at mean-of-per-seed-peaks (consistent with the other
+        # NLP curve plots: agnews_noisy_curves, agnews_noise_ablation_curves).
+        # Floats above the mean line by Jensen's inequality — see caption note.
+        peak_xy = (mean_peak_epoch, mean_peak_val)
+        final_xy = (float(epochs_x[-1]), mean_final_val)
+        mark_peak_final(ax, peak_xy, final_xy, color=color)
 
         summary_lines.append(f"[{variant}] {label}")
         summary_lines.append(f"  seeds: n={len(seeds)} list={seeds}")
@@ -213,7 +217,20 @@ def build(runs_root: pathlib.Path, out_dir: pathlib.Path) -> None:
         )
     ax.set_ylim(data_min - 0.5, data_max + 0.5)
 
-    ax.legend(loc="lower right")
+    # Move the legend below the plot to keep the data area clean — the Flat
+    # curve drops into the lower-right region where the legend would otherwise
+    # sit. Matches the agnews_noisy_curves convention for 5-epoch NLP plots.
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=len(labels),
+        bbox_to_anchor=(0.5, -0.02),
+        frameon=False,
+    )
+    fig.tight_layout()
+    fig.subplots_adjust(bottom=0.22)
 
     pdf, png = save_figure(fig, out_dir, NAME)
     summary_lines.append("outputs:")

@@ -77,6 +77,12 @@ class LineSpec:
     noise_active: bool | None
 
 
+# Display-label overrides: in this figure (and throughout the NLP-noisy
+# section of the thesis) the warmup-linear schedule is referred to simply
+# as "Linear", and combined methods use scheduler-first ordering
+# ("Linear + AEES-Dual") for consistency with the CIFAR figures.
+_LINEAR_LABEL = "Linear"
+
 PLOT_LINES: list[LineSpec] = [
     LineSpec(
         key="adamw_flat",
@@ -89,7 +95,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="adamw_wl",
-        label=LABEL["warmup_linear"],
+        label=_LINEAR_LABEL,
         color=PALETTE["warmup_linear"],
         variant_key="warmup_linear",
         scheduler="warmup_linear",
@@ -107,7 +113,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="aees_noise_wl",
-        label=f"{LABEL['aees_noise']} + {LABEL['warmup_linear']}",
+        label=f"{_LINEAR_LABEL} + {LABEL['aees_noise']}",
         color=PALETTE["aees_noise"],
         variant_key="warmup_linear_aees",
         scheduler="warmup_linear",
@@ -116,7 +122,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="aees_dual_wl",
-        label=f"{LABEL['aees_dual']} + {LABEL['warmup_linear']}",
+        label=f"{_LINEAR_LABEL} + {LABEL['aees_dual']}",
         color=PALETTE["warmup_linear_aees"],
         variant_key="warmup_linear_aees",
         scheduler="warmup_linear",
@@ -273,6 +279,12 @@ def _build_figure(stats: list[LineStats]):
             label=st.spec.label,
             **line_kwargs,
         )
+        # Use the mean-of-per-seed-peaks for both x and y. On a 5-epoch axis
+        # this naturally spreads the peak rings across fractional epochs
+        # (e.g., 4.4 vs 4.6) so they don't stack on top of each other or on
+        # the final-epoch squares. Consistent with cifar_symmetric40_curves;
+        # the caption acknowledges that markers can float above the mean
+        # line (Jensen's inequality for the max operator).
         peak_xy = (st.mean_peak_epoch, st.mean_peak_acc * 100.0)
         final_xy = (float(TOTAL_EPOCHS), st.mean_final_acc * 100.0)
         mark_peak_final(ax, peak_xy, final_xy, st.spec.color)
@@ -292,8 +304,20 @@ def _build_figure(stats: list[LineStats]):
     hi = float(np.max(all_means + all_stds)) + 0.4
     ax.set_ylim(lo, hi)
 
-    ax.legend(loc="lower right")
+    # With 5 entries and a tight 5-epoch plot, every in-axes legend position
+    # collides with some curve. Move the legend below the plot in a single
+    # horizontal row, matching the cifar_symmetric40_curves convention.
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=len(labels),
+        bbox_to_anchor=(0.5, -0.02),
+        frameon=False,
+    )
     fig.tight_layout()
+    fig.subplots_adjust(bottom=0.20)
     return fig
 
 

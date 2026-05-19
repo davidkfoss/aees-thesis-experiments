@@ -90,6 +90,24 @@ SETTING_SPEC: dict[str, dict[str, Any]] = {
         "name": "arm_selection_cifar_sym40",
         "axes": ["lr"],
     },
+    "cifar_sym40_cosine": {
+        # Same layout as cifar_sym40 but for the Cosine + AEES flagship.
+        # Used to show that the controller's preferred arm pattern is
+        # consistent with or modulated by the global decay schedule.
+        "name": "arm_selection_cifar_sym40_cosine",
+        "axes": ["lr"],
+    },
+    "cifar_sym40_paired": {
+        # Side-by-side comparison: AEES-LR alone vs Cosine + AEES on the
+        # 40% symmetric label noise setting. Renders the arm-selection
+        # trajectories for both runs in a single two-panel figure, sharing
+        # the y-axis so the AEES-alone vs Cosine+AEES contrast (preference
+        # cements vs preference inverts) reads in a single glance.
+        "name": "arm_selection_cifar_sym40_paired",
+        "axes": ["lr"],  # both panels show the LR axis
+        "component_settings": ["cifar_sym40", "cifar_sym40_cosine"],
+        "panel_titles": ["AEES (no scheduler)", "Cosine + AEES"],
+    },
     "agnews_noisy": {
         # Two panels: σ axis on the left, LR axis on the right. Showing both
         # is critical for the AG News chapter — the σ-only view hid that the
@@ -119,6 +137,20 @@ def _predicate_cifar_sym40(info: RunInfo, _record: dict[str, Any]) -> bool:
     return True
 
 
+def _predicate_cifar_sym40_cosine(info: RunInfo, _record: dict[str, Any]) -> bool:
+    if info.task != "cifar100":
+        return False
+    if info.noise_setting != "sym40":
+        return False
+    if info.optimizer != "AdamW":
+        return False
+    if info.path is None:
+        return False
+    if info.path.name != "adamw_cosine_aees_ep200_lr05102":
+        return False
+    return True
+
+
 def _predicate_agnews_noisy(info: RunInfo, record: dict[str, Any]) -> bool:
     if info.task != "agnews":
         return False
@@ -139,6 +171,7 @@ def _predicate_agnews_noisy(info: RunInfo, record: dict[str, Any]) -> bool:
 
 PREDICATES = {
     "cifar_sym40": _predicate_cifar_sym40,
+    "cifar_sym40_cosine": _predicate_cifar_sym40_cosine,
     "agnews_noisy": _predicate_agnews_noisy,
 }
 
@@ -189,7 +222,8 @@ def _arm_fractions(
     lengths = [len(s) for s in selected_lists]
     n_episodes = min(lengths)
     if n_episodes <= 0:
-        raise ValueError(f"degenerate episode count after truncation: {n_episodes}")
+        raise ValueError(
+            f"degenerate episode count after truncation: {n_episodes}")
 
     n_seeds = len(items_sorted)
     n_arms = len(arm_values)
@@ -227,6 +261,51 @@ def _display_window(n_episodes: int) -> int:
     """Window size (odd, ≥5) for centered rolling-mean smoothing."""
     window = max(5, int(round(n_episodes * 0.05)))
     return window if window % 2 == 1 else window + 1
+
+
+def _per_seed_smoothed_fractions(
+    items: list[tuple[RunInfo, dict[str, Any]]],
+    selected_key: str,
+    arm_values: list[float],
+    n_episodes: int,
+    window: int,
+) -> np.ndarray:
+    """[n_seeds, n_arms, n_episodes] of smoothed per-seed selection fractions.
+
+    For each seed, each arm-row is a 0/1 indicator vector over episodes (1 if
+    that seed picked that arm in that episode), centered-rolling-meaned with
+    the same window used for the stacked-area display. The resulting per-seed
+    fractions allow drawing cross-seed mean ± SD bands per arm, which is the
+    correct view for the "did the controller learn a preference?" question:
+    the SD band shows how consistent the preference is across seeds.
+    """
+    items_sorted = sorted(
+        items, key=lambda iv: (iv[0].seed if iv[0].seed is not None else -1)
+    )
+    n_seeds = len(items_sorted)
+    n_arms = len(arm_values)
+    arms_arr = np.asarray(arm_values, dtype=float)
+
+    indicators = np.zeros((n_seeds, n_arms, n_episodes), dtype=float)
+    for s_idx, (_, record) in enumerate(items_sorted):
+        s_vals = np.asarray(
+            record["episode_logs"][selected_key][:n_episodes], dtype=float
+        )
+        for a_idx, a_val in enumerate(arms_arr):
+            indicators[s_idx, a_idx, :] = np.isclose(
+                s_vals, a_val, atol=1e-9
+            ).astype(float)
+
+    if window <= 1:
+        return indicators
+
+    half = window // 2
+    smoothed = np.empty_like(indicators)
+    for i in range(n_episodes):
+        lo = max(0, i - half)
+        hi = min(n_episodes, i + half + 1)
+        smoothed[:, :, i] = indicators[:, :, lo:hi].mean(axis=2)
+    return smoothed
 
 
 def _centered_rolling_mean(fractions: np.ndarray, window: int) -> np.ndarray:
@@ -304,6 +383,72 @@ def _make_multi_panel(n_panels: int):
         1, n_panels, sharey=True, figsize=(width, 4.0)
     )
     return fig, list(axes)
+
+
+def _draw_per_arm_lines(
+    ax,
+    per_seed_smoothed: np.ndarray,
+    arm_values: list[float],
+    axis_spec: dict[str, Any],
+    representative_record: dict[str, Any],
+) -> None:
+    """Per-arm cross-seed mean trajectory with ±1 SD band; uniform reference.
+
+    Reads more directly than the stacked-area display when the controller
+    *does* learn a preference: one line lifts above the 1/K uniform line
+    while the others drop below, and the SD band shows whether seeds agree.
+    Used for the cifar_sym40 setting; the agnews_noisy setting keeps the
+    stacked area because the story there is that nothing concentrates.
+    """
+    n_seeds, n_arms, n_episodes = per_seed_smoothed.shape
+    mean = per_seed_smoothed.mean(axis=0)
+    std = per_seed_smoothed.std(axis=0, ddof=0)
+    # Override the standard arm_palette here: this figure is the only place
+    # in the thesis that puts three LR-arm trajectories on a single set of
+    # axes (the other arm-selection figure uses stacked areas), and the
+    # light-to-dark single-hue palette becomes ambiguous when the three lines
+    # are stacked at similar y. Use hue-separated colors instead so each arm
+    # is unambiguously identifiable in print and at a glance. Order:
+    # m=0.5 (preferred) → orange, m=1.0 (neutral) → blue, m=2.0 (suppressed)
+    # → red. Falls back to arm_palette for n_arms ≠ 3 or non-aees_lr.
+    if axis_spec["base_key"] == "aees_lr" and n_arms == 3:
+        colors = ["#ff7f0e", "#1f77b4", "#d62728"]
+    else:
+        colors = arm_palette(axis_spec["base_key"], n_arms)
+
+    # x-axis: convert episode index to epoch using the run's total_epochs,
+    # so the figure shares its time unit with every other CIFAR plot.
+    total_epochs = representative_record.get("total_epochs")
+    if total_epochs and n_episodes >= 2:
+        eps_per_epoch = n_episodes / float(total_epochs)
+        x = np.arange(1, n_episodes + 1) / eps_per_epoch
+        x_label = "Epoch"
+        x_lim = (0.0, float(total_epochs))
+    else:
+        x = np.arange(1, n_episodes + 1, dtype=float)
+        x_label = "Episode"
+        x_lim = (1.0, float(n_episodes))
+
+    for a_idx, (arm_val, color) in enumerate(zip(arm_values, colors)):
+        lo = np.clip(mean[a_idx] - std[a_idx], 0.0, 1.0)
+        hi = np.clip(mean[a_idx] + std[a_idx], 0.0, 1.0)
+        ax.fill_between(x, lo, hi, color=color,
+                        alpha=0.18, linewidth=0, zorder=1)
+        ax.plot(
+            x, mean[a_idx],
+            color=color, linewidth=1.8, zorder=3,
+            label=axis_spec["arm_label_fmt"](arm_val),
+        )
+
+    # Uniform-random reference line. If the controller learns anything, lines
+    # diverge from this line; if it does not, lines hug it.
+
+    ax.set_xlabel(x_label)
+    ax.set_ylabel("Per-episode selection fraction")
+    ax.set_xlim(*x_lim)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title(axis_spec["axis_title"], fontsize=10, pad=8)
+    ax.legend(loc="upper right", frameon=False, fontsize=8)
 
 
 def _draw_panel(
@@ -431,9 +576,153 @@ def _quarter_means(
     return (
         fractions.mean(axis=1),
         fractions[:, :q].mean(axis=1),
-        fractions[:, q : 3 * q].mean(axis=1),
+        fractions[:, q: 3 * q].mean(axis=1),
         fractions[:, -q:].mean(axis=1),
     )
+
+
+def _run_paired(args, spec: dict[str, Any]) -> int:
+    """Render a two-panel arm-selection figure comparing two component settings.
+
+    Each panel shows per-arm trajectories (mean ± SD across seeds) for one
+    component setting. Both panels share the y-axis so the cross-context
+    contrast (preference cements vs preference inverts) reads directly off
+    the page.
+    """
+    name = spec["name"]
+    component_keys: list[str] = spec["component_settings"]
+    panel_titles: list[str] = spec["panel_titles"]
+    axis_key: str = spec["axes"][0]
+    axis_spec = AXIS_SPECS[axis_key]
+
+    try:
+        # Load runs and compute per-axis data for each component.
+        per_component: list[dict[str, Any]] = []
+        for comp_key in component_keys:
+            items = _load_runs(args.runs_root, comp_key)
+            if not items:
+                write_missing(
+                    args.out_dir, name,
+                    f"No flagship runs found for component '{comp_key}' "
+                    f"under {args.runs_root.resolve()}.\n",
+                )
+                return 1
+            items_sorted = sorted(
+                items, key=lambda iv: (
+                    iv[0].seed if iv[0].seed is not None else -1
+                )
+            )
+            ctrl_key = axis_spec["controller_logs_key"]
+            arm_value_sets = {
+                tuple(r["controller_logs"][ctrl_key]["arm_values"])
+                for _, r in items
+            }
+            if len(arm_value_sets) != 1:
+                raise ValueError(
+                    f"inconsistent {ctrl_key}.arm_values across seeds for "
+                    f"component '{comp_key}': {sorted(arm_value_sets)}"
+                )
+            (arm_values_tuple,) = arm_value_sets
+            arm_values = sorted(arm_values_tuple)
+
+            fractions, n_episodes, seeds = _arm_fractions(
+                items, axis_spec["selected_values_key"], arm_values
+            )
+            window = _display_window(n_episodes)
+            per_seed = _per_seed_smoothed_fractions(
+                items,
+                axis_spec["selected_values_key"],
+                arm_values,
+                n_episodes,
+                window,
+            )
+            per_component.append({
+                "comp_key": comp_key,
+                "items": items,
+                "items_sorted": items_sorted,
+                "arm_values": arm_values,
+                "fractions": fractions,
+                "per_seed": per_seed,
+                "n_episodes": n_episodes,
+                "seeds": seeds,
+                "window": window,
+                "representative_record": items_sorted[0][1],
+            })
+
+        # Two-panel figure, shared y so the cross-context contrast reads
+        # directly. ~3.5in per panel matches _make_multi_panel for n=2.
+        fig, panels = plt.subplots(
+            1, 2, sharey=True, figsize=(7.5, 4.0)
+        )
+        for ax, comp, title in zip(panels, per_component, panel_titles):
+            _draw_per_arm_lines(
+                ax,
+                comp["per_seed"],
+                comp["arm_values"],
+                axis_spec,
+                comp["representative_record"],
+            )
+            # Override the per-axis title set by _draw_per_arm_lines so the
+            # panel headers identify the scheduler context, not just the axis.
+            ax.set_title(title, fontsize=10, pad=8)
+
+        # Drop redundant y-label from the right panel (sharey already
+        # suppresses tick labels but the ylabel call inside _draw_per_arm_lines
+        # sets it on both axes).
+        panels[1].set_ylabel("")
+
+        fig.tight_layout()
+    except Exception as exc:
+        reason = (
+            f"Failed to build {name}.\n\n"
+            f"Exception: {exc!r}\n\n"
+            f"Traceback:\n```\n{traceback.format_exc()}```\n"
+        )
+        write_missing(args.out_dir, name, reason)
+        return 1
+
+    pdf_path, png_path = save_figure(fig, args.out_dir, name)
+
+    repo_root = pathlib.Path(__file__).resolve().parents[3]
+
+    def _rel(p: pathlib.Path) -> str:
+        try:
+            return str(p.resolve().relative_to(repo_root))
+        except ValueError:
+            return str(p.resolve())
+
+    summary_lines: list[str] = []
+    summary_lines.append(f"runs-root: {_rel(args.runs_root)}")
+    summary_lines.append(f"setting: {spec['name']}")
+    summary_lines.append(f"component_settings: {component_keys}")
+    summary_lines.append("")
+    for comp, title in zip(per_component, panel_titles):
+        summary_lines.append(
+            f"=== Panel: {title} (component={comp['comp_key']}) ===")
+        for info, _ in comp["items_sorted"]:
+            summary_lines.append(f"  - {_rel(info.path)} (seed={info.seed})")
+        overall, first_q, mid, last_q = _quarter_means(
+            comp["fractions"], comp["arm_values"]
+        )
+        summary_lines.append("")
+        summary_lines.append("Mean fraction per arm (raw, unsmoothed):")
+        for a_idx, a_val in enumerate(comp["arm_values"]):
+            summary_lines.append(
+                f"  arm {a_val:g}: overall={overall[a_idx]:.3f}  "
+                f"first25%={first_q[a_idx]:.3f}  middle50%={mid[a_idx]:.3f}  "
+                f"last25%={last_q[a_idx]:.3f}  "
+                f"drift(last-first)={last_q[a_idx] - first_q[a_idx]:+.3f}"
+            )
+        summary_lines.append("")
+
+    summary_lines.append("outputs:")
+    summary_lines.append(f"  - {pdf_path}")
+    summary_lines.append(f"  - {png_path}")
+    write_summary(args.out_dir, name, summary_lines)
+
+    print(f"wrote {pdf_path}")
+    print(f"wrote {png_path}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -456,6 +745,12 @@ def main(argv: list[str] | None = None) -> int:
     name = spec["name"]
     axis_keys: list[str] = spec["axes"]
 
+    # Paired-figure path: load each component setting independently and
+    # render their per-arm-lines into a shared two-panel figure. Bypasses
+    # the per-axis loop used by the other settings.
+    if "component_settings" in spec:
+        return _run_paired(args, spec)
+
     try:
         items = _load_runs(args.runs_root, args.setting)
         if not items:
@@ -467,7 +762,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         items_sorted = sorted(
-            items, key=lambda iv: (iv[0].seed if iv[0].seed is not None else -1)
+            items, key=lambda iv: (
+                iv[0].seed if iv[0].seed is not None else -1)
         )
 
         # Per-axis: arm values, raw fractions, smoothed display fractions.
@@ -506,19 +802,45 @@ def main(argv: list[str] | None = None) -> int:
         representative_info, representative_record = items_sorted[0]
         fig, panels = _make_multi_panel(len(axis_keys))
 
+        # Both cifar_sym40 settings (AEES alone and Cosine + AEES) use per-arm
+        # trajectories with ±SD bands — the right view when the controller
+        # *does* learn a preference. agnews_noisy keeps the stacked-area
+        # display because its story is that the bands stay roughly equal
+        # across all arms.
+        use_lines = args.setting in ("cifar_sym40", "cifar_sym40_cosine")
+
         for ax, axis_key in zip(panels, axis_keys):
             entry = per_axis[axis_key]
-            _draw_panel(
-                ax,
-                entry["display"],
-                entry["n_episodes"],
-                entry["arm_values"],
-                entry["axis_spec"],
-                representative_record,
-                is_first_panel=(axis_key == axis_keys[0]),
-            )
+            if use_lines:
+                per_seed = _per_seed_smoothed_fractions(
+                    items,
+                    entry["axis_spec"]["selected_values_key"],
+                    entry["arm_values"],
+                    entry["n_episodes"],
+                    entry["window"],
+                )
+                _draw_per_arm_lines(
+                    ax,
+                    per_seed,
+                    entry["arm_values"],
+                    entry["axis_spec"],
+                    representative_record,
+                )
+            else:
+                _draw_panel(
+                    ax,
+                    entry["display"],
+                    entry["n_episodes"],
+                    entry["arm_values"],
+                    entry["axis_spec"],
+                    representative_record,
+                    is_first_panel=(axis_key == axis_keys[0]),
+                )
 
-        fig.subplots_adjust(bottom=0.24, top=0.85, wspace=0.10)
+        if use_lines:
+            fig.tight_layout()
+        else:
+            fig.subplots_adjust(bottom=0.24, top=0.85, wspace=0.10)
     except Exception as exc:
         reason = (
             f"Failed to build {name}.\n\n"
@@ -554,9 +876,11 @@ def main(argv: list[str] | None = None) -> int:
         arm_values = entry["arm_values"]
         fractions = entry["fractions"]
 
-        summary_lines.append(f"=== Axis: {axis_key} ({axis_spec['axis_title']}) ===")
+        summary_lines.append(
+            f"=== Axis: {axis_key} ({axis_spec['axis_title']}) ===")
         summary_lines.append(f"n_seeds: {len(entry['seeds'])}")
-        summary_lines.append(f"n_episodes_after_truncation: {entry['n_episodes']}")
+        summary_lines.append(
+            f"n_episodes_after_truncation: {entry['n_episodes']}")
         summary_lines.append(f"arm_values: {arm_values}")
         summary_lines.append(
             f"smoothing_window (display only): {entry['window']} "
@@ -582,7 +906,8 @@ def main(argv: list[str] | None = None) -> int:
             "Per-seed mean-fraction (and L1 distance from group mean):"
         )
         for seed, fracs_dict, l1 in disagreement:
-            frac_str = " ".join(f"{k:g}:{v:.2f}" for k, v in fracs_dict.items())
+            frac_str = " ".join(f"{k:g}:{v:.2f}" for k,
+                                v in fracs_dict.items())
             summary_lines.append(f"  seed {seed}: {frac_str}  L1={l1:.3f}")
 
         callout = _settled_callout(fractions, arm_values, axis_key)

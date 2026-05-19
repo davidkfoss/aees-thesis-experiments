@@ -102,7 +102,10 @@ def _build_figure(stats):
         fontsize=8,
     )
     ax.set_ylabel("Validation accuracy (%)")
-    ax.set_ylim(89.0, 94.5)
+    # Without Flat the lowest bar+error_bar is Baseline final (~90.2);
+    # 90.0 fits with a small margin while preserving resolution in the
+    # σ>0 cluster around 93.5.
+    ax.set_ylim(90.0, 94.5)
     ax.grid(axis="x", visible=False)
 
     legend_handles = [
@@ -125,14 +128,15 @@ def _summary_lines(
     lines: list[str] = []
     lines.append(f"runs-root: {runs_root}")
     lines.append(
-        f"Conditions (left to right): {', '.join(st.spec.label for st in stats)}"
+        "Conditions (left to right): "
+        + ", ".join(st.spec.label for st in stats)
     )
     lines.append("")
     for st in stats:
         gap = (st.mean_peak_acc - st.mean_final_acc) * 100.0
         lines.append(
-            f"[{st.spec.key}] (display='{st.spec.label}') n={len(st.seeds)} "
-            f"seeds={st.seeds}"
+            f"[{st.spec.key}] (display='{st.spec.label}') "
+            f"n={len(st.seeds)} seeds={st.seeds}"
         )
         lines.append(
             f"  peak  mean={st.mean_peak_acc * 100.0:.2f}%  "
@@ -148,7 +152,7 @@ def _summary_lines(
     finals_pos = [
         st.mean_final_acc * 100.0
         for st in stats
-        if st.spec.key not in ("adamw_flat", "adamw_wl")
+        if st.spec.key != "adamw_wl"
     ]
     spread = max(finals_pos) - min(finals_pos)
     lines.append(f"σ>0 cluster final-epoch spread (max-min): {spread:.3f} pp")

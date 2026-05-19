@@ -125,6 +125,82 @@ def _format_arm(v: float) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _per_seed_medians(
+    items: list[tuple[RunInfo, dict[str, Any]]],
+    axis: str,
+) -> tuple[list[float], list[list[float]], list[int]]:
+    """For each arm, return one median reward per seed.
+
+    Returns ``(arm_values, per_arm_per_seed, seeds_sorted)`` where
+    ``per_arm_per_seed[arm_idx]`` is a list of length ``n_seeds`` containing
+    the median reward that the matching seed received whenever that arm was
+    pulled. NaN if a seed never pulled the arm.
+
+    This is the cross-seed view that ``§5.5.1`` is actually claiming on:
+    "between-arm differences are small relative to the variability observed
+    across seeds". The pooled view returned by ``_pool_rewards`` mixes
+    within-seed (episode-to-episode) and between-seed variability, which
+    is not the comparison the thesis is making.
+    """
+    assert axis in ("lr", "noise")
+    sel_key = "selected_lr_values" if axis == "lr" else "selected_noise_values"
+    ctrl_key = "lr_controller_logs" if axis == "lr" else "noise_controller_logs"
+
+    items_sorted = sorted(
+        items, key=lambda iv: iv[0].seed if iv[0].seed is not None else -1
+    )
+    seeds = [info.seed for info, _ in items_sorted]
+
+    # Establish canonical arm values (same as _pool_rewards).
+    canonical_arms: list[float] | None = None
+    for info, record in items_sorted:
+        ctrl_logs = record.get("controller_logs") or {}
+        sub = ctrl_logs.get(ctrl_key) or {}
+        arms = sub.get("arm_values")
+        if not arms:
+            raise ValueError(
+                f"missing {ctrl_key}.arm_values for seed={info.seed} path={info.path}"
+            )
+        arms_f = [float(a) for a in arms]
+        if canonical_arms is None:
+            canonical_arms = arms_f
+        elif arms_f != canonical_arms:
+            raise ValueError(
+                f"arm_values mismatch across seeds: {canonical_arms} vs {arms_f} "
+                f"(seed={info.seed} path={info.path})"
+            )
+    assert canonical_arms is not None
+
+    n_arms = len(canonical_arms)
+    n_seeds = len(items_sorted)
+    per_arm_per_seed: list[list[float]] = [
+        [float("nan")] * n_seeds for _ in range(n_arms)
+    ]
+
+    for seed_idx, (info, record) in enumerate(items_sorted):
+        ep_logs = record.get("episode_logs") or {}
+        rewards = ep_logs.get("episode_rewards") or []
+        selected = ep_logs.get(sel_key) or []
+        if len(rewards) != len(selected):
+            raise ValueError(
+                f"episode_rewards / {sel_key} length mismatch ({len(rewards)} vs "
+                f"{len(selected)}) for seed={info.seed} path={info.path}"
+            )
+        # Bucket this seed's rewards into arms first, then take per-arm median
+        # for this seed.
+        per_arm_this_seed: list[list[float]] = [[] for _ in range(n_arms)]
+        for r_val, s_val in zip(rewards, selected):
+            idx = _snap_index(float(s_val), canonical_arms)
+            per_arm_this_seed[idx].append(float(r_val))
+        for arm_idx in range(n_arms):
+            if per_arm_this_seed[arm_idx]:
+                per_arm_per_seed[arm_idx][seed_idx] = float(
+                    np.median(per_arm_this_seed[arm_idx])
+                )
+
+    return canonical_arms, per_arm_per_seed, seeds
+
+
 def _pool_rewards(
     items: list[tuple[RunInfo, dict[str, Any]]],
     axis: str,
@@ -181,6 +257,81 @@ def _pool_rewards(
 # ---------------------------------------------------------------------------
 # Plotting.
 # ---------------------------------------------------------------------------
+
+
+def _draw_per_seed_dots(
+    ax,
+    arm_values: list[float],
+    per_arm_per_seed: list[list[float]],
+    base_key: str,
+    xlabel: str,
+    ylabel: str | None,
+) -> None:
+    """Per-seed median reward as jittered dots, with cross-seed mean ± SD overlaid.
+
+    Each dot is one seed's median reward for the arm; the heavy black bar is the
+    mean of those per-seed medians; the vertical error bar is the across-seed SD.
+    This view directly answers the §5.5.1 claim because the within-column dot
+    spread (across-seed variability) and the between-column mean-bar offset
+    (per-arm signal) are both visible at the same y-scale.
+    """
+    n_arms = len(arm_values)
+    positions = list(range(n_arms))
+    colors = arm_palette(base_key, n_arms)
+    rng = np.random.default_rng(0)  # deterministic jitter
+
+    for pos, seed_meds, color in zip(positions, per_arm_per_seed, colors):
+        valid = [m for m in seed_meds if not np.isnan(m)]
+        if not valid:
+            continue
+        valid_arr = np.asarray(valid, dtype=float)
+        n_pts = valid_arr.size
+        jitter = rng.uniform(-0.12, 0.12, size=n_pts)
+        ax.scatter(
+            np.full(n_pts, pos) + jitter,
+            valid_arr,
+            s=22,
+            facecolor=color,
+            edgecolor="black",
+            linewidth=0.5,
+            alpha=0.85,
+            zorder=3,
+        )
+
+        mean = float(valid_arr.mean())
+        std = float(valid_arr.std(ddof=0))
+        # Mean bar (wide, bold) so the cross-seed mean is unambiguous against
+        # the dot cloud.
+        ax.hlines(
+            mean,
+            pos - 0.28, pos + 0.28,
+            colors="black", linewidth=2.0, zorder=4,
+        )
+        # Cross-seed ±1 SD error bar.
+        ax.errorbar(
+            pos, mean, yerr=std,
+            fmt="none", color="black",
+            capsize=4, capthick=1.0, linewidth=1.0, zorder=4,
+        )
+        # Numeric annotation for the mean.
+        ax.annotate(
+            f"{mean:+.3f}",
+            xy=(pos + 0.30, mean),
+            xytext=(2, 0),
+            textcoords="offset points",
+            ha="left", va="center",
+            fontsize=7.0, color="black", zorder=5,
+        )
+
+    # No-improvement reference line.
+    ax.axhline(0, color="lightgray", linestyle="--", linewidth=0.8, zorder=0)
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels([_format_arm(v) for v in arm_values])
+    ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    ax.set_xlim(-0.6, n_arms - 0.4)
 
 
 def _draw_violin(
@@ -389,34 +540,48 @@ def _run_agnews_noisy(args) -> int:
             write_missing(args.out_dir, name, reason)
             return 1
 
-        lr_arms, lr_per_arm, seeds, n_total = _pool_rewards(items, axis="lr")
-        noise_arms, noise_per_arm, _seeds_noise, n_total_noise = _pool_rewards(
+        # Pooled view (kept for the summary file because the existing
+        # text reports pooled medians and per-arm n).
+        lr_arms, lr_per_arm_pool, seeds, n_total = _pool_rewards(items, axis="lr")
+        noise_arms, noise_per_arm_pool, _seeds_noise, n_total_noise = _pool_rewards(
             items, axis="noise"
         )
         if n_total != n_total_noise:
             raise ValueError(
                 f"pooled episode counts disagree across axes: lr={n_total} noise={n_total_noise}"
             )
-        lr_stats = _per_arm_stats(lr_per_arm)
-        noise_stats = _per_arm_stats(noise_per_arm)
+        lr_stats = _per_arm_stats(lr_per_arm_pool)
+        noise_stats = _per_arm_stats(noise_per_arm_pool)
+
+        # Per-seed view (what the figure now displays). One median per
+        # (arm, seed) pair, exposing across-seed variability — which is the
+        # comparison §5.5.1 actually makes.
+        _, lr_per_arm_per_seed, _ = _per_seed_medians(items, axis="lr")
+        _, noise_per_arm_per_seed, _ = _per_seed_medians(items, axis="noise")
 
         fig, axes = make_figure(n_panels=2)
-        _draw_violin(
+        _draw_per_seed_dots(
             axes[0],
             lr_arms,
-            lr_per_arm,
+            lr_per_arm_per_seed,
             base_key="aees_lr",
             xlabel="LR multiplier",
-            ylabel="Clipped log-EMA reward",
+            ylabel="Per-seed median clipped log-EMA reward",
         )
-        _draw_violin(
+        _draw_per_seed_dots(
             axes[1],
             noise_arms,
-            noise_per_arm,
+            noise_per_arm_per_seed,
             base_key="aees_noise",
-            xlabel="Gradient noise sigma",
+            xlabel=r"Gradient noise $\sigma$",
             ylabel=None,
         )
+        # Match y-axis across panels so visual comparison of cross-arm
+        # spread vs cross-seed spread is honest between LR and σ.
+        y_lo = min(ax.get_ylim()[0] for ax in axes)
+        y_hi = max(ax.get_ylim()[1] for ax in axes)
+        for ax in axes:
+            ax.set_ylim(y_lo, y_hi)
         fig.tight_layout()
     except Exception as exc:
         reason = (
@@ -440,11 +605,11 @@ def _run_agnews_noisy(args) -> int:
         summary_lines.append(f"  - {info.path}")
     summary_lines.append("")
     summary_lines.extend(_summary_block(
-        "LR multiplier", lr_arms, lr_per_arm, lr_stats))
+        "LR multiplier", lr_arms, lr_per_arm_pool, lr_stats))
     summary_lines.append("")
     summary_lines.extend(
         _summary_block("Gradient noise sigma", noise_arms,
-                       noise_per_arm, noise_stats)
+                       noise_per_arm_pool, noise_stats)
     )
     summary_lines.append("")
     summary_lines.append("outputs:")

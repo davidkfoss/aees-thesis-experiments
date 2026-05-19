@@ -83,16 +83,16 @@ class Regime:
 REGIMES: tuple[Regime, ...] = (
     Regime(
         key="cifar_clean_aees_lr",
-        title="CIFAR-100 / AdamW / AEES-LR (clean)",
+        title="CIFAR-100 / AdamW / AEES-LR + Linear",
         # CIFAR clean is an LR-only AEES run.
         color_key="aees_lr",
         rel_paths=tuple(
-            f"results/cifar_clean/cifar_clean_aees_none_seed{s}.json" for s in range(5)
+            f"results/cifar_clean/cifar_clean_aees_linear_seed{s}.json" for s in range(5)
         ),
     ),
     Regime(
         key="sst2_aees_dual_wl",
-        title="SST-2 / AdamW / AEES-Dual+WL",
+        title="SST-2 / AdamW / AEES-Dual + Linear",
         color_key="aees_dual",
         rel_paths=tuple(
             f"results/sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed{s}.json"
@@ -101,7 +101,7 @@ REGIMES: tuple[Regime, ...] = (
     ),
     Regime(
         key="agnews_sym20_aees_dual_wl",
-        title="AG News (sym20) / AdamW / AEES-Dual+WL",
+        title="AG News (sym20) / AdamW / AEES-Dual + Linear",
         # The two NLP regimes are semantically both AEES-Dual+WL; use a
         # distinct PALETTE entry here so the single-panel layout doesn't put
         # two brown lines on top of each other.
@@ -302,60 +302,73 @@ def _format_norm(value: float) -> str:
 def _build_figure(regime_data: list[RegimeData]):
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
 
-    max_step = 0.0
+    # Shaded horizontal band for the gradient-noise injection range tested
+    # across the NLP experiments. SST-2 uses σ ∈ {0, 0.0025, 0.005} and
+    # AG News uses σ ∈ {0, 0.005, 0.01}; the union (also = [0, 0.01]) is
+    # what the band represents. On a log y-axis σ = 0 is at −∞, so we
+    # extend the band's lower bound to an arbitrarily small positive value;
+    # matplotlib clips it to the plot floor. Per-regime σ sets are spelled
+    # out in the caption.
+    sigma_hi = 0.01
+    ax.axhspan(
+        1e-12, sigma_hi,
+        color="#999999", alpha=0.12, zorder=0,
+        label=r"$\sigma$-injection range, "
+              r"$\sigma \in \{0,\ 0.0025,\ 0.005,\ 0.01\}$",
+    )
+
+    # Per-regime trajectories on a normalized training-progress x-axis so
+    # the three regimes (391 / 106 / 169 episodes) are directly comparable.
     for rd in regime_data:
         color = PALETTE[rd.regime.color_key]
-        x = rd.steps_ref
-        # Mask non-finite IQR boundaries so the band doesn't blow up the log
-        # axis. NaNs in either bound -> drop that index.
-        finite = np.isfinite(rd.median_smooth) & np.isfinite(
-            rd.q25_smooth) & np.isfinite(rd.q75_smooth)
+        n_ep = len(rd.median_smooth)
+        if n_ep <= 1:
+            continue
+        x_norm = np.arange(n_ep) / float(n_ep - 1)
+
+        finite = (
+            np.isfinite(rd.median_smooth)
+            & np.isfinite(rd.q25_smooth)
+            & np.isfinite(rd.q75_smooth)
+        )
         if not np.any(finite):
             continue
-        # Build label including smoothing window for transparency.
-        label = f"{rd.regime.title} (median, ±IQR; w={rd.smooth_window})"
 
         ax.fill_between(
-            x[finite],
+            x_norm[finite],
             rd.q25_smooth[finite],
             rd.q75_smooth[finite],
-            color=color, alpha=0.18, linewidth=0,
+            color=color, alpha=0.16, linewidth=0,
         )
         ax.plot(
-            x[finite],
+            x_norm[finite],
             rd.median_smooth[finite],
-            color=color, linewidth=1.8, label=label, zorder=3,
+            color=color, linewidth=1.8, label=rd.regime.title, zorder=3,
         )
-        # Late-training reference line and right-edge annotation.
-        ax.axhline(
-            rd.late_median,
-            color=color, linestyle="--", linewidth=0.9, alpha=0.7, zorder=1,
+        # Right-edge value annotation so the reader can read off the
+        # late-training median without consulting the caption.
+        last_x = float(x_norm[finite][-1])
+        last_y = float(rd.median_smooth[finite][-1])
+        ax.annotate(
+            f"{last_y:.1e}",
+            xy=(last_x, last_y),
+            xytext=(6, 0), textcoords="offset points",
+            color=color, fontsize=7.5, va="center",
         )
-        max_step = max(max_step, float(x[finite][-1]))
 
     ax.set_yscale("log")
-    ax.set_xlabel("Training step")
-    ax.set_ylabel("Mean update norm (log)")
-    if max_step > 0:
-        ax.set_xlim(0.0, max_step)
+    ax.set_xlabel("Training progress (fraction of episodes)")
+    ax.set_ylabel(r"Mean update norm (after AdamW rescaling)")
+    ax.set_xlim(0.0, 1.0)
+    # Clamp y-limits explicitly: the σ-band's lower bound is set to 1e-12
+    # so it visually represents σ = 0, but without this clamp the autoscale
+    # picks that up and ~half the plot becomes empty space below the data.
+    ax.set_ylim(5e-4, 1.0)
 
-    # Single legend, 3 entries -- one per regime median. Per the brief:
-    # "Drop any per-seed legend entries." The plot already contains only
-    # median + band primitives, so the legend is naturally clean.
-    ax.legend(loc="lower right", frameon=False, fontsize=7.6)
-
-    # Figure-level reminder that this is a post-AdamW-rescaling proxy.
-    fig.text(
-        0.5,
-        -0.005,
-        "Note: this is the update norm AFTER AdamW rescaling, not the raw "
-        r"gradient norm; cross-regime ratios are qualitative.",
-        ha="center",
-        va="top",
-        fontsize=8.0,
-        fontstyle="italic",
-        color="#444444",
-    )
+    # Lower-left is the cleanest spot: NLP curves start in the upper-middle
+    # at x ≈ 0 and decay toward the σ-band on the right, leaving lower-left
+    # clear; CIFAR sits in the upper band throughout.
+    ax.legend(loc="lower left", frameon=False, fontsize=8)
 
     fig.tight_layout()
     return fig

@@ -116,22 +116,14 @@ def _make_predicate(
     return predicate
 
 
+# All remaining conditions share the warmup-linear scheduler, so the "+ WL"
+# suffix is dropped and the σ=0 warmup-linear row is renamed "Baseline (σ=0)".
+# The Flat (σ=0, no scheduler) variant is omitted from this ablation; the
+# Flat-vs-Linear comparison lives in agnews_noisy_curves instead.
 PLOT_LINES: list[LineSpec] = [
     LineSpec(
-        key="adamw_flat",
-        label="Flat (σ=0)",
-        color=PALETTE["flat"],
-        linestyle="--",
-        predicate=_make_predicate(
-            method_name="AdamW",
-            lr_scheduler="none",
-            lr_candidates=[1.0],
-            noise_candidates=[0.0],
-        ),
-    ),
-    LineSpec(
         key="adamw_wl",
-        label="Warmup-linear (σ=0)",
+        label="Baseline (σ=0)",
         color=PALETTE["warmup_linear"],
         linestyle="--",
         predicate=_make_predicate(
@@ -143,7 +135,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="fixed_005",
-        label="Fixed σ=0.005 + WL",
+        label="Fixed σ=0.005",
         color="#2ca02c",  # green
         linestyle="-",
         predicate=_make_predicate(
@@ -155,7 +147,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="fixed_01",
-        label="Fixed σ=0.01 + WL",
+        label="Fixed σ=0.01",
         color="#bcbd22",  # olive
         linestyle="-",
         predicate=_make_predicate(
@@ -167,7 +159,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="random_sigma",
-        label="Random σ + WL",
+        label="Random σ",
         color="#e377c2",  # pink
         linestyle="-",
         predicate=_make_predicate(
@@ -179,7 +171,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="aees_noise_wl",
-        label="AEES-Noise + WL",
+        label="AEES-Noise",
         color=PALETTE["aees_noise"],
         linestyle="-",
         predicate=_make_predicate(
@@ -191,7 +183,7 @@ PLOT_LINES: list[LineSpec] = [
     ),
     LineSpec(
         key="aees_dual_wl",
-        label="AEES-Dual + WL",
+        label="AEES-Dual",
         color=PALETTE["warmup_linear_aees"],
         linestyle="-",
         predicate=_make_predicate(
@@ -348,8 +340,21 @@ def _build_figure(stats: list[LineStats]):
     hi = float(np.max(all_means + all_stds)) + 0.5
     ax.set_ylim(lo, hi)
 
-    ax.legend(loc="lower right", ncol=1, fontsize=7.5)
+    # Place the legend below the plot. With 6 entries fitting in one row
+    # this keeps the data area free of the legend, which on the previous
+    # "lower right" placement was sitting on top of the Baseline σ=0 drop.
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=len(labels),
+        bbox_to_anchor=(0.5, -0.02),
+        frameon=False,
+        fontsize=7.5,
+    )
     fig.tight_layout()
+    fig.subplots_adjust(bottom=0.20)
     return fig
 
 
@@ -381,15 +386,15 @@ def _summary_lines(
 
     lines.append("")
     lines.append("σ>0 cluster spread (max-min final-epoch accuracy, %):")
-    sigma_pos = [st for st in stats if st.spec.key not in ("adamw_flat", "adamw_wl")]
+    sigma_pos = [st for st in stats if st.spec.key != "adamw_wl"]
     finals_pos = [st.mean_final_acc * 100.0 for st in sigma_pos]
     spread = max(finals_pos) - min(finals_pos)
     lines.append(f"  {spread:.3f} pp across {[st.spec.key for st in sigma_pos]}")
 
     lines.append("")
-    lines.append("σ=0 baseline drops (peak-to-final, pp):")
+    lines.append("σ=0 baseline drop (peak-to-final, pp):")
     for st in stats:
-        if st.spec.key in ("adamw_flat", "adamw_wl"):
+        if st.spec.key == "adamw_wl":
             drop = (st.mean_peak_acc - st.mean_final_acc) * 100.0
             lines.append(f"  {st.spec.key}: {drop:.2f} pp")
 

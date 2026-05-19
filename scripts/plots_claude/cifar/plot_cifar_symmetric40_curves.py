@@ -32,6 +32,7 @@ from typing import Any
 
 import matplotlib.patheffects as pe
 import numpy as np
+from matplotlib.lines import Line2D
 
 from scripts.plots_claude._common import RunInfo, load_set
 from scripts.plots_claude._style import (
@@ -158,9 +159,11 @@ def _build_figure(
     legend_labels: list[str] = []
     seen_methods: set[str] = set()
 
-    # Pass 1: draw lines (raw ghost + smoothed bold). Pass 2 draws peak/final
-    # markers on top so the halo never gets clipped by a later line segment.
-    marker_jobs: list[tuple[Any, float, float, int, float, str]] = []
+    # Pass 1: draw lines + bands. Pass 2 draws peak/final markers on top
+    # so the halo never gets clipped by a later line segment.
+    # Last tuple field is `is_flat` so the second pass can render the Flat
+    # baseline's markers with the same de-emphasis as its line.
+    marker_jobs: list[tuple[Any, float, float, int, float, str, bool]] = []
 
     for ax, (opt_key, opt_title) in zip(axes, PANELS):
         for variant_key in METHODS:
@@ -169,41 +172,46 @@ def _build_figure(
                 continue
             mat, _seeds, T = cell
             x = np.arange(1, T + 1)
-            mean_raw = mat.mean(axis=0) * 100.0
             mat_smooth = _rolling_mean_axis1(mat, SMOOTH_WINDOW)
             mean_smooth = mat_smooth.mean(axis=0) * 100.0
+            # ±1 SD band across seeds, computed from the smoothed per-seed
+            # curves so the band's width reflects between-seed variability
+            # at the same smoothing scale as the mean line.
+            std_smooth = mat_smooth.std(axis=0) * 100.0
             color = PALETTE[variant_key]
             label = DISPLAY_LABEL[variant_key]
 
             is_flat = variant_key == "flat"
             if is_flat:
-                # De-emphasized: thinner, fainter, and we skip its peak/final
-                # markers entirely. Still drawn so the reader sees the baseline.
-                ax.plot(
-                    x, mean_raw,
-                    color=color, alpha=0.18, linewidth=0.6, zorder=1,
+                # De-emphasized baseline: faint band, thin line. Markers are
+                # still drawn (with reduced prominence) so the reader can
+                # cross-reference Flat's peak/final positions against the
+                # scheduled methods; see _build_figure pass 2.
+                ax.fill_between(
+                    x, mean_smooth - std_smooth, mean_smooth + std_smooth,
+                    color=color, alpha=0.08, linewidth=0, zorder=1,
                 )
                 line, = ax.plot(
                     x, mean_smooth,
-                    color=color, alpha=0.45, linewidth=1.1, zorder=2,
+                    color=color, alpha=0.55, linewidth=1.1, zorder=2,
                     label=label,
                 )
             else:
-                # Raw per-epoch mean as a thin ghost line UNDERNEATH the
-                # smoothed bold line, same color.
-                ax.plot(
-                    x, mean_raw,
-                    color=color, alpha=0.25, linewidth=0.6, zorder=1,
+                # ±1 SD band underneath the bold mean line.
+                ax.fill_between(
+                    x, mean_smooth - std_smooth, mean_smooth + std_smooth,
+                    color=color, alpha=0.16, linewidth=0, zorder=1,
                 )
                 line, = ax.plot(
                     x, mean_smooth,
                     color=color, linewidth=1.8, zorder=3,
                     label=label,
                 )
-                peak_epoch, peak_acc, final_acc = _peak_final_stats(mat)
-                marker_jobs.append(
-                    (ax, peak_epoch, peak_acc, T, final_acc, color)
-                )
+
+            peak_epoch, peak_acc, final_acc = _peak_final_stats(mat)
+            marker_jobs.append(
+                (ax, peak_epoch, peak_acc, T, final_acc, color, is_flat)
+            )
 
             if variant_key not in seen_methods:
                 legend_handles.append(line)
@@ -215,18 +223,30 @@ def _build_figure(
         ax.set_xlim(1, max(T for _m, _s, T in cells.values()))
 
     # Pass 2: peak/final markers with white halo, drawn on top of every line.
+    # Flat markers are drawn first (lower zorder) and with reduced alpha so
+    # they sit subordinately behind any overlapping scheduled-method marker
+    # (in this figure, Flat and Cosine peak at essentially the same point on
+    # both optimizers, so Cosine's peak ring will hide Flat's — addressed in
+    # the caption).
     halo = pe.withStroke(linewidth=3.0, foreground="white")
-    for ax, peak_epoch, peak_acc, T, final_acc, color in marker_jobs:
+    # Stable two-pass order: Flat first, then scheduled methods.
+    marker_jobs.sort(key=lambda j: 0 if j[6] else 1)
+    for ax, peak_epoch, peak_acc, T, final_acc, color, is_flat in marker_jobs:
+        marker_alpha = 0.55 if is_flat else 1.0
+        peak_z = 4 if is_flat else 6
+        final_z = 4 if is_flat else 5
         ax.plot(
             peak_epoch, peak_acc, marker="o",
             markerfacecolor="none", markeredgecolor=color,
             markersize=8, markeredgewidth=1.8,
-            linestyle="none", zorder=6, path_effects=[halo],
+            linestyle="none", zorder=peak_z, alpha=marker_alpha,
+            path_effects=[halo],
         )
         ax.plot(
             T, final_acc, marker="s",
             color=color, markeredgecolor="black", markeredgewidth=0.6,
-            markersize=6, linestyle="none", zorder=5, path_effects=[halo],
+            markersize=6, linestyle="none", zorder=final_z, alpha=marker_alpha,
+            path_effects=[halo],
         )
 
     # Identical y-limits across both panels. The figure was built with
@@ -239,11 +259,30 @@ def _build_figure(
 
     axes[0].set_ylabel("Validation accuracy (%)")
 
+    # Explain the peak/final markers in the legend so the reader doesn't
+    # have to infer them from the shapes alone.
+    marker_handles = [
+        Line2D(
+            [0], [0], marker="o", linestyle="none",
+            markerfacecolor="none", markeredgecolor="black",
+            markersize=7, markeredgewidth=1.4,
+            label="Mean peak",
+        ),
+        Line2D(
+            [0], [0], marker="s", linestyle="none",
+            color="black", markeredgecolor="black",
+            markeredgewidth=0.5, markersize=5,
+            label="Mean final",
+        ),
+    ]
+    all_handles = legend_handles + marker_handles
+    all_labels = legend_labels + ["Mean peak", "Mean final"]
+
     fig.legend(
-        legend_handles,
-        legend_labels,
+        all_handles,
+        all_labels,
         loc="lower center",
-        ncol=len(legend_labels),
+        ncol=len(all_labels),
         bbox_to_anchor=(0.5, -0.02),
         frameon=False,
     )

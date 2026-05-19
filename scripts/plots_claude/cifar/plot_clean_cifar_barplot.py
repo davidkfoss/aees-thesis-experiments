@@ -185,11 +185,14 @@ def main(argv: list[str] | None = None) -> int:
         error_kw={"linewidth": 0.8},
     )
 
-    # Annotate each bar's mean above the cap to 1 decimal place.
+    # Annotate each bar's mean to 1 decimal place. Cap the visual offset so
+    # bars with very large SD (AEES Final, whose ±1 SD whisker reaches ~66%)
+    # don't push the label far above the bar top, which is otherwise misleading.
+    label_offset_cap = 0.45
     for xi, mean, std in zip(x - bar_w / 2, peak_means, peak_stds):
         ax.text(
             xi,
-            mean + std + 0.12,
+            mean + min(std, label_offset_cap) + 0.15,
             f"{mean:.1f}",
             ha="center",
             va="bottom",
@@ -198,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     for xi, mean, std in zip(x + bar_w / 2, final_means, final_stds):
         ax.text(
             xi,
-            mean + std + 0.12,
+            mean + min(std, label_offset_cap) + 0.15,
             f"{mean:.1f}",
             ha="center",
             va="bottom",
@@ -213,7 +216,10 @@ def main(argv: list[str] | None = None) -> int:
         rotation_mode="anchor",
     )
     ax.set_ylabel("Validation accuracy (%)")
-    ax.set_ylim(68, 74)
+    # y-axis lowered just enough to fit AEES Final's ±1 SD whisker (~66%);
+    # the 5pp of extra range below 68% keeps the main cluster (70-73%)
+    # readable. Caption flags the seed-level outlier behind that wide SD.
+    ax.set_ylim(65, 74)
     ax.grid(axis="x", visible=False)
 
     legend_handles = [
