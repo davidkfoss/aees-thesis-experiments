@@ -32,3 +32,5 @@ results/*
 
 # Hugging Face cache (datasets, models, hub)
 .hf_cache/
+
+*.egg-info
