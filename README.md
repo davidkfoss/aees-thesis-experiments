@@ -123,12 +123,12 @@ uv run python experiments/task_cifar100.py \
   --seed 0
 ```
 
-Representative SST-2 warmup-linear AdamW baseline:
+Representative SST-2 linear decay AdamW baseline:
 
 ```bash
 uv run python experiments/task_sst2.py \
   --method AdamW \
-  --lr-scheduler warmup_linear \
+  --lr-scheduler warmup_linear \ # warmup_epochs are 0 by default
   --seed 0
 ```
 
@@ -137,7 +137,7 @@ Representative AG News noise-only AEES run:
 ```bash
 uv run python experiments/task_agnews.py \
   --method AdaptiveScheduler \
-  --lr-scheduler warmup_linear \
+  --lr-scheduler warmup_linear \ # warmup_epochs are 0 by default
   --lr-candidates 1.0 \
   --noise-candidates 0.0,0.005,0.01 \
   --label-noise-rate 0.2 \
