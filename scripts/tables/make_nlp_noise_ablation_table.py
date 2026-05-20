@@ -2,7 +2,7 @@
 """Generate the LaTeX table for the noisy AG News σ-axis ablation.
 
 Loads the 7 conditions (σ=0 baselines + 5 σ>0 conditions) from results/,
-aggregates best and final validation accuracies (mean ± population std) across
+aggregates best and final validation accuracies (mean ± sample std) across
 5 seeds, and emits a LaTeX `tabular` matching the styling of
 make_nlp_latex_tables.py (bold best, italic second-best, drop in pp).
 
@@ -20,7 +20,7 @@ import math
 import pathlib
 import sys
 from dataclasses import dataclass
-from statistics import mean, pstdev
+from statistics import mean, stdev
 from typing import Any, Callable
 
 
@@ -131,27 +131,27 @@ class CellStats:
 
     @property
     def best_mean(self) -> float:
-        return mean(self.bests)
+        return mean(self.bests) * 100.0
 
     @property
     def best_std(self) -> float:
-        return pstdev(self.bests) if len(self.bests) > 1 else 0.0
+        return stdev(self.bests) * 100.0 if len(self.bests) > 1 else 0.0
 
     @property
     def final_mean(self) -> float:
-        return mean(self.finals)
+        return mean(self.finals) * 100.0
 
     @property
     def final_std(self) -> float:
-        return pstdev(self.finals) if len(self.finals) > 1 else 0.0
+        return stdev(self.finals) * 100.0 if len(self.finals) > 1 else 0.0
 
     @property
     def drop_mean(self) -> float:
-        return mean(self.drops)
+        return mean(self.drops) * 100.0
 
     @property
     def drop_std(self) -> float:
-        return pstdev(self.drops) if len(self.drops) > 1 else 0.0
+        return stdev(self.drops) * 100.0 if len(self.drops) > 1 else 0.0
 
     @property
     def peak_epoch_mean(self) -> float:
@@ -159,7 +159,7 @@ class CellStats:
 
     @property
     def peak_epoch_std(self) -> float:
-        return pstdev(self.peak_epochs) if len(self.peak_epochs) > 1 else 0.0
+        return stdev(self.peak_epochs) if len(self.peak_epochs) > 1 else 0.0
 
 
 def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
@@ -173,8 +173,8 @@ def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
                 if seed is None:
                     continue
                 seed = int(seed)
-                best = float(record["best_val_accuracy"]) * 100.0
-                final = float(record["final_val_accuracy"]) * 100.0
+                best = float(record["best_val_accuracy"])
+                final = float(record["final_val_accuracy"])
                 vals = record.get("val_accuracies") or []
                 if vals:
                     peak_epoch = int(max(range(len(vals)), key=lambda i: vals[i])) + 1
@@ -248,7 +248,7 @@ def _build_table(cells: dict[str, CellStats]) -> str:
         r"`Fixed $\sigma$' injects a constant gradient-noise standard deviation. "
         r"`Random $\sigma$' samples $\sigma \in \{0, 0.005, 0.01\}$ uniformly at "
         r"random per episode (no reward feedback). AEES variants use the discounted-UCB "
-        r"controller. Best and final validation accuracy are mean $\pm$ population standard "
+        r"controller. Best and final validation accuracy are mean $\pm$ standard "
         r"deviation across $n$ seeds. Drop is best$-$final in percentage points (lower is better). "
         r"Bold and italics mark the best and second-best values per column.}"
     )
