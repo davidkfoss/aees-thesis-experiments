@@ -2,7 +2,11 @@
 
 This directory is the expected location for archived experiment outputs used to regenerate thesis and ICONIP 2026 paper-submission tables and figures.
 
-The full archived result bundle is not tracked in Git because it contains large per-run output files. To regenerate tables and figures from archived results, place or extract the archived bundle so that the directory structure matches:
+The archived result bundle is available as a GitHub release asset:
+
+<https://github.com/davidkfoss/aees-thesis-experiments/releases/tag/v0.1.0>
+
+The bundle is not tracked in Git because it contains large per-run output files. To regenerate tables and figures from archived results, place or extract it so that the directory structure matches:
 
 ```text
 archived_results/
@@ -41,20 +45,20 @@ The ICONIP 2026 paper submission uses a scoped subset of this archive, primarily
 - `noisy_agnews/`
 - `nlp_noise_ablation/`
 - `compute_overhead/`
+- `checkpointing/`
 
 ## Regeneration workflow
 
 Figure-generation scripts require explicit input and output paths (`--runs-root` and `--out-dir`). Most read from the matching subfolder of `archived_results/` and write to `reproduced_artifacts/figures/...`, but the correct `--runs-root` is **not uniform**, and several scripts take additional required flags. Always check a script's `--help` for its expected layout. The non-obvious cases are:
 
-| Figure script | `--runs-root` | Required extra flags |
-| --- | --- | --- |
-| `cifar.plot_cifar_noisy_curves` | `archived_results/cifar_noisy` | `--noise-setting {asym20,sym20,sym40}` (run once per setting) |
-| `controllers.plot_arm_selection` | `archived_results/cifar_noisy` *or* `archived_results/noisy_agnews` (depends on setting) | `--setting {agnews_noisy,cifar_sym40,cifar_sym40_cosine,cifar_sym40_paired}` |
-| `controllers.plot_reward_per_arm` | `archived_results/cifar_noisy` *or* `archived_results/noisy_agnews` (depends on setting) | `--setting {cifar_sym40,agnews_noisy}` |
-| `controllers.plot_update_norm_trajectory` | `archived_results` (spans `cifar_clean/`, `sst2/`, `noisy_agnews/`) | — |
-| `nlp_ablation.plot_agnews_noise_ablation_barplot` / `..._curves` | `archived_results` (the whole tree; walked recursively across `noisy_agnews/` and `nlp_noise_ablation/`) | — |
-| `diagnostics.plot_peak_checkpoint_diagnostics` | `archived_results/checkpointing` | — |
-| `compute.plot_wallclock_overhead` | `archived_results/compute_overhead` | — (write to `reproduced_artifacts/figures/compute`) |
+| Figure script                                                    | `--runs-root`                                                                                            | Required extra flags                                                         |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `cifar.plot_cifar_noisy_curves`                                  | `archived_results/cifar_noisy`                                                                           | `--noise-setting {asym20,sym20,sym40}` (run once per setting)                |
+| `controllers.plot_arm_selection`                                 | `archived_results/cifar_noisy` _or_ `archived_results/noisy_agnews` (depends on setting)                 | `--setting {agnews_noisy,cifar_sym40,cifar_sym40_cosine,cifar_sym40_paired}` |
+| `controllers.plot_reward_per_arm`                                | `archived_results/cifar_noisy` _or_ `archived_results/noisy_agnews` (depends on setting)                 | `--setting {cifar_sym40,agnews_noisy}`                                       |
+| `controllers.plot_update_norm_trajectory`                        | `archived_results` (spans `cifar_clean/`, `sst2/`, `noisy_agnews/`)                                      | —                                                                            |
+| `nlp_ablation.plot_agnews_noise_ablation_barplot` / `..._curves` | `archived_results` (the whole tree; walked recursively across `noisy_agnews/` and `nlp_noise_ablation/`) | —                                                                            |
+| `diagnostics.plot_peak_checkpoint_diagnostics`                   | `archived_results/checkpointing`                                                                         | —                                                                            |
 
 Example figure command:
 
@@ -65,7 +69,7 @@ uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves \
   --noise-setting sym40
 ```
 
-When a figure script cannot find its inputs it does **not** print an error to the console: it exits non-zero and writes `<out-dir>/<figure-name>.MISSING.md` listing the exact paths it looked for. Check that file to diagnose a failed run.
+When a figure script cannot find its inputs, it may exit non-zero and write `<out-dir>/<figure-name>.MISSING.md` listing the exact paths it looked for. Check that file to diagnose a failed run.
 
 Table-generation scripts are configured with default paths. In normal use, they can be run directly with `uv run python ...`. By default, table scripts read from `archived_results/` and write regenerated outputs to `reproduced_artifacts/tables/...`.
 
