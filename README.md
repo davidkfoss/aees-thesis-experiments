@@ -149,14 +149,7 @@ These commands are representative single-run examples. The thesis tables are gen
 
 ## Tables and plots
 
-`scripts/tables/` and `scripts/plots/` regenerate the thesis tables and figures by reading archived run-result JSON files. These scripts are read-only consumers: they do not launch training runs. `scripts/report_*.py` produce summary CSVs over a results directory.
-
-Example help commands:
-
-```bash
-uv run python scripts/tables/make_cifar_clean_tables.py --help
-uv run python scripts/plots/cifar_plots.py --help
-```
+`scripts/tables/` and `scripts/plots/` regenerate the thesis tables and figures by reading archived run-result JSON files. These scripts are read-only consumers: they do not launch training runs.
 
 The archived result files are the authoritative source for the numerical tables reported in the thesis. Re-running training with the same seeds should reproduce the same qualitative behavior and similar aggregate results, but exact trajectory-level or bitwise reproduction across machines is not guaranteed.
 
