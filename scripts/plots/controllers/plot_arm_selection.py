@@ -402,7 +402,8 @@ def _draw_per_arm_lines(
     """
     n_seeds, n_arms, n_episodes = per_seed_smoothed.shape
     mean = per_seed_smoothed.mean(axis=0)
-    std = per_seed_smoothed.std(axis=0, ddof=0)
+    std = (per_seed_smoothed.std(axis=0, ddof=1)  # sample std
+           if n_seeds > 1 else np.zeros_like(mean))
     # Override the standard arm_palette here: this figure is the only place
     # in the thesis that puts three LR-arm trajectories on a single set of
     # axes (the other arm-selection figure uses stacked areas), and the

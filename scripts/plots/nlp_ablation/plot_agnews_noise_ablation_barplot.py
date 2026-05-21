@@ -54,8 +54,7 @@ def _build_figure(stats):
     bar_w = 0.38
 
     peak_means = np.array([st.mean_peak_acc * 100.0 for st in stats])
-    peak_stds = np.array(
-        [st.std[int(np.argmax(st.mean))] * 100.0 for st in stats])
+    peak_stds = np.array([st.std_peak_acc * 100.0 for st in stats])
     final_means = np.array([st.mean_final_acc * 100.0 for st in stats])
     final_stds = np.array([st.std[-1] * 100.0 for st in stats])
     colors = [st.spec.color for st in stats]
@@ -141,7 +140,7 @@ def _summary_lines(
         )
         lines.append(
             f"  peak  mean={st.mean_peak_acc * 100.0:.2f}%  "
-            f"std={st.std[int(np.argmax(st.mean))] * 100.0:.2f}%"
+            f"std={st.std_peak_acc * 100.0:.2f}%"
         )
         lines.append(
             f"  final mean={st.mean_final_acc * 100.0:.2f}%  "

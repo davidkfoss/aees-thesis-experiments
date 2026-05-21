@@ -299,7 +299,7 @@ def _draw_per_seed_dots(
         )
 
         mean = float(valid_arr.mean())
-        std = float(valid_arr.std(ddof=0))
+        std = float(valid_arr.std(ddof=1)) if valid_arr.size > 1 else 0.0
         # Mean bar (wide, bold) so the cross-seed mean is unambiguous against
         # the dot cloud.
         ax.hlines(
@@ -420,7 +420,7 @@ def _per_arm_stats(per_arm: list[list[float]]) -> list[dict[str, float]]:
                 "n": int(arr.size),
                 "mean": float(arr.mean()),
                 "median": float(np.median(arr)),
-                "std": float(arr.std()),  # population std
+                "std": float(arr.std(ddof=1)) if arr.size > 1 else 0.0,  # sample std
                 "frac_pos": float((arr > 0).mean()),
             }
         )

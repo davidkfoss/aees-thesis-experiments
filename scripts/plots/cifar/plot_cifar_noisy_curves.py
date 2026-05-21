@@ -167,7 +167,7 @@ def _build_figure(
             x = np.arange(1, T + 1)
             mat_smooth = _rolling_mean_axis1(mat, SMOOTH_WINDOW)
             mean_smooth = mat_smooth.mean(axis=0) * 100.0
-            std_smooth = mat_smooth.std(axis=0) * 100.0
+            std_smooth = mat_smooth.std(axis=0, ddof=1) * 100.0  # sample std
             color = PALETTE[variant_key]
             label = DISPLAY_LABEL[variant_key]
 

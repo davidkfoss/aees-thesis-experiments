@@ -127,22 +127,25 @@ def main(argv: list[str] | None = None) -> int:
                     f"best_val_accuracy or final_val_accuracy.",
                 )
                 return 1
-            peaks.append(float(best) * 100.0)
-            finals.append(float(final) * 100.0)
+            peaks.append(float(best))
+            finals.append(float(final))
             seeds.append(info.seed if info.seed is not None else -1)
         order = np.argsort(seeds)
         seeds_sorted = [seeds[i] for i in order]
         peaks_arr = np.asarray([peaks[i] for i in order], dtype=float)
         finals_arr = np.asarray([finals[i] for i in order], dtype=float)
 
+        # Aggregate on the raw fractions, then scale to percent once — this
+        # matches the table-generator convention (mean-of-fractions ×100,
+        # sample SD) and avoids last-ULP drift between figure and table.
         cells[variant] = {
             "seeds": seeds_sorted,
             "peaks": peaks_arr,
             "finals": finals_arr,
-            "peak_mean": float(peaks_arr.mean()),
-            "peak_std": float(peaks_arr.std(ddof=0)),
-            "final_mean": float(finals_arr.mean()),
-            "final_std": float(finals_arr.std(ddof=0)),
+            "peak_mean": float(peaks_arr.mean()) * 100.0,
+            "peak_std": float(peaks_arr.std(ddof=1)) * 100.0,
+            "final_mean": float(finals_arr.mean()) * 100.0,
+            "final_std": float(finals_arr.std(ddof=1)) * 100.0,
         }
 
     # ---- Figure ---------------------------------------------------------

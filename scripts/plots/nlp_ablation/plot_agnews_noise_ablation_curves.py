@@ -6,7 +6,7 @@ AEES-Dual + WL — produces the same late-epoch validation accuracy as the
 AEES-controller variants, while both σ=0 baselines (Flat AdamW and AdamW +
 Warmup-linear) show the characteristic late-epoch drop.
 
-Seven curves over 5 epochs, mean ± population std band across 5 seeds.
+Seven curves over 5 epochs, mean ± sample std band across 5 seeds.
 
 CLI:
     python -m scripts.plots.nlp_ablation.plot_agnews_noise_ablation_curves \
@@ -210,6 +210,7 @@ class LineStats:
     std: np.ndarray             # shape (TOTAL_EPOCHS,) in [0,1]
     mean_peak_epoch: float      # 1-indexed
     mean_peak_acc: float        # in [0,1]
+    std_peak_acc: float         # sample SD of per-seed peaks, in [0,1]
     mean_final_acc: float       # in [0,1]
 
 
@@ -279,7 +280,7 @@ def _aggregate(spec: LineSpec, runs: list[tuple[int, pathlib.Path, dict]]) -> Li
         [r["val_accuracies"] for _, _, r in runs_sorted], dtype=float
     )
     mean = matrix.mean(axis=0)
-    std = matrix.std(axis=0)
+    std = matrix.std(axis=0, ddof=1)
     peak_epochs = matrix.argmax(axis=1) + 1
     peak_accs = matrix.max(axis=1)
     final_accs = matrix[:, -1]
@@ -291,6 +292,7 @@ def _aggregate(spec: LineSpec, runs: list[tuple[int, pathlib.Path, dict]]) -> Li
         std=std,
         mean_peak_epoch=float(np.mean(peak_epochs)),
         mean_peak_acc=float(np.mean(peak_accs)),
+        std_peak_acc=float(peak_accs.std(ddof=1)),
         mean_final_acc=float(np.mean(final_accs)),
     )
 

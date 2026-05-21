@@ -153,10 +153,12 @@ def build(runs_root: pathlib.Path, out_dir: pathlib.Path) -> None:
             )
 
         accs, total_epochs = _stack_val_accuracies(records)
-        accs_pct = accs * 100.0  # -> percent
 
-        mean = accs_pct.mean(axis=0)
-        std = accs_pct.std(axis=0, ddof=0)  # population std
+        # Aggregate on the raw fractions and scale to percent only at the end,
+        # matching the table-generator convention (mean-of-fractions ×100,
+        # sample SD); avoids last-ULP drift between figure and table values.
+        mean = accs.mean(axis=0) * 100.0
+        std = accs.std(axis=0, ddof=1) * 100.0  # sample std
         epochs_x = np.arange(1, total_epochs + 1)
 
         color = PALETTE[variant]
@@ -169,15 +171,17 @@ def build(runs_root: pathlib.Path, out_dir: pathlib.Path) -> None:
         all_means_min.append(float(mean.min()))
         all_means_max.append(float(mean.max()))
 
-        # Per-seed peak epoch (1-indexed) for the summary and marker.
-        per_seed_peak_epoch = (np.argmax(accs_pct, axis=1) + 1).astype(float)
-        per_seed_peak_val = accs_pct[np.arange(accs_pct.shape[0]),
-                                     np.argmax(accs_pct, axis=1)]
-        per_seed_final_val = accs_pct[:, -1]
+        # Per-seed peak epoch (1-indexed) for the summary and marker. Take the
+        # per-seed peak/final on fractions, average, then ×100 (same order as
+        # the band and the table).
+        peak_idx = np.argmax(accs, axis=1)
+        per_seed_peak_epoch = (peak_idx + 1).astype(float)
+        per_seed_peak_frac = accs[np.arange(accs.shape[0]), peak_idx]
+        per_seed_final_frac = accs[:, -1]
 
         mean_peak_epoch = float(per_seed_peak_epoch.mean())
-        mean_peak_val = float(per_seed_peak_val.mean())
-        mean_final_val = float(per_seed_final_val.mean())
+        mean_peak_val = float(per_seed_peak_frac.mean()) * 100.0
+        mean_final_val = float(per_seed_final_frac.mean()) * 100.0
         peak_to_final_drop = mean_peak_val - mean_final_val
 
         # Peak marker at mean-of-per-seed-peaks (consistent with the other

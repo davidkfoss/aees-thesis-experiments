@@ -233,7 +233,7 @@ def _aggregate(spec: LineSpec, runs: list[tuple[RunInfo, dict]]) -> LineStats:
         [record["val_accuracies"] for _, record in runs_sorted], dtype=float
     )
     mean = matrix.mean(axis=0)
-    std = matrix.std(axis=0)  # population std (numpy default ddof=0)
+    std = matrix.std(axis=0, ddof=1)  # sample std
     # Peak per seed: 1-indexed argmax + accuracy at that epoch.
     peak_epochs = matrix.argmax(axis=1) + 1
     peak_accs = matrix.max(axis=1)

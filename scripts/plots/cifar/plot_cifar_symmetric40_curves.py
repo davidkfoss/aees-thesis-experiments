@@ -177,7 +177,7 @@ def _build_figure(
             # ±1 SD band across seeds, computed from the smoothed per-seed
             # curves so the band's width reflects between-seed variability
             # at the same smoothing scale as the mean line.
-            std_smooth = mat_smooth.std(axis=0) * 100.0
+            std_smooth = mat_smooth.std(axis=0, ddof=1) * 100.0  # sample std
             color = PALETTE[variant_key]
             label = DISPLAY_LABEL[variant_key]
 
