@@ -239,8 +239,8 @@ def _collect(
     """Bucket files into the 7 line specs. Returns (per_key, errors).
 
     Files matching the same (line, seed) under multiple directories — e.g.
-    the same run mirrored into both `results/nlp_noise_ablation/` and
-    `results/noisy_agnews/` — are deduped: first occurrence (walk_runs
+    the same run mirrored into both `archived_results/nlp_noise_ablation/` and
+    `archived_results/noisy_agnews/` — are deduped: first occurrence (walk_runs
     sorts paths lexicographically) wins.
     """
     by_key_seed: dict[str, dict[int, tuple[pathlib.Path, dict]]] = {

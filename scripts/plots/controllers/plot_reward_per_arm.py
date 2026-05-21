@@ -460,7 +460,7 @@ def _run_cifar_sym40(args) -> int:
             reason = (
                 "No matching runs found.\n\n"
                 "Expected runs:\n"
-                "  results/cifar_noisy/cifar100_sym40_seed<0..4>/adamw_aees_ep200_lr05102\n\n"
+                "  archived_results/cifar_noisy/cifar100_sym40_seed<0..4>/adamw_aees_ep200_lr05102\n\n"
                 f"Searched under: {args.runs_root}\n"
             )
             write_missing(args.out_dir, name, reason)
@@ -530,7 +530,7 @@ def _run_agnews_noisy(args) -> int:
             reason = (
                 "No matching runs found.\n\n"
                 "Expected runs:\n"
-                "  results/noisy_agnews/seed_<0..4>/agnews_noise20_aees_warmup_linear_*.json\n"
+                "  archived_results/noisy_agnews/seed_<0..4>/agnews_noise20_aees_warmup_linear_*.json\n"
                 "  (with len(config.lr_candidates)>1 AND len(config.noise_candidates)>1)\n\n"
                 f"Searched under: {args.runs_root}\n"
             )

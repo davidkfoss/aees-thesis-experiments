@@ -258,13 +258,13 @@ def main() -> int:
         "--runs-root",
         required=True,
         type=pathlib.Path,
-        help="Directory containing SST-2 result JSONs (e.g. results/sst2).",
+        help="Directory containing SST-2 result JSONs (e.g. archived_results/sst2).",
     )
     parser.add_argument(
         "--out-dir",
         required=True,
         type=pathlib.Path,
-        help="Output directory for the figure (e.g. results/plots/nlp).",
+        help="Output directory for the figure (e.g. reproduced_artifacts/figures/nlp).",
     )
     args = parser.parse_args()
     build(args.runs_root, args.out_dir)

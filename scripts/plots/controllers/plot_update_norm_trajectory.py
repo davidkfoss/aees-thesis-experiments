@@ -3,7 +3,7 @@
 Three stacked panels, shared training-step x-axis, independent log y-axes:
 
   1. CIFAR-100 / AdamW / AEES-LR / clean
-     archived_results/cifar_clean/cifar_clean_aees_none_seed<0-4>.json
+     archived_results/cifar_clean/cifar_clean_aees_linear_seed<0-4>.json
   2. SST-2 / AdamW / AEES-Dual + warmup-linear
      archived_results/sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed<0-4>.json
   3. AG News 20% symmetric / AdamW / AEES-Dual + warmup-linear
@@ -88,7 +88,7 @@ REGIMES: tuple[Regime, ...] = (
         # CIFAR clean is an LR-only AEES run.
         color_key="aees_lr",
         rel_paths=tuple(
-            f"results/cifar_clean/cifar_clean_aees_linear_seed{s}.json" for s in range(5)
+            f"cifar_clean/cifar_clean_aees_linear_seed{s}.json" for s in range(5)
         ),
     ),
     Regime(
@@ -96,7 +96,7 @@ REGIMES: tuple[Regime, ...] = (
         title="SST-2 / AdamW / AEES-Dual + Linear",
         color_key="aees_dual",
         rel_paths=tuple(
-            f"results/sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed{s}.json"
+            f"sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed{s}.json"
             for s in range(5)
         ),
     ),
@@ -108,7 +108,7 @@ REGIMES: tuple[Regime, ...] = (
         # two brown lines on top of each other.
         color_key="aees_noise",
         rel_paths=tuple(
-            f"results/noisy_agnews/seed_{s}/"
+            f"noisy_agnews/seed_{s}/"
             f"agnews_noise20_aees_warmup_linear_5ep_coarse_highnoise_ep200_seed{s}.json"
             for s in range(5)
         ),
@@ -485,7 +485,7 @@ def main(argv: list[str] | None = None) -> int:
         "--runs-root",
         type=pathlib.Path,
         required=True,
-        help="Repository root containing results/cifar_clean, results/sst2, results/noisy_agnews.",
+        help="Archived-results root containing cifar_clean/, sst2/, and noisy_agnews/ subfolders (e.g. archived_results).",
     )
     parser.add_argument(
         "--out-dir",

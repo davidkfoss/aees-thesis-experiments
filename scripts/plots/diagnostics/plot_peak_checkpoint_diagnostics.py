@@ -270,7 +270,7 @@ def _build_figure(points: list[Point]):
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--runs-root", type=pathlib.Path, default=pathlib.Path("results/checkpointing"),
+        "--runs-root", type=pathlib.Path, default=pathlib.Path("archived_results/checkpointing"),
         help="Directory holding cifar100_asym20/ and cifar100_sym40/ rerun JSONs.",
     )
     parser.add_argument(

@@ -153,6 +153,12 @@ These commands are representative single-run examples. The thesis tables are gen
 
 The archived result files are the authoritative source for the numerical tables reported in the thesis. Re-running training with the same seeds should reproduce the same qualitative behavior and similar aggregate results, but exact trajectory-level or bitwise reproduction across machines is not guaranteed.
 
+### Artifact reproduction
+
+Three top-level directories support regenerating the thesis and ICONIP 2026 paper artifacts (see the Layout section for what each holds). The reporting scripts read from `archived_results/` — the canonical archived bundle, which is distinct from the live `results/` tree that the experiment runners write to.
+
+Table scripts run directly (`uv run python scripts/tables/<name>.py`) using archived-results defaults; figure scripts take explicit `--runs-root` and `--out-dir`, where the correct `--runs-root` varies per script. Start with [`archived_results/README.md`](archived_results/README.md) — it documents the expected bundle layout, the per-figure regeneration commands, and where regenerated output is written.
+
 ## Tests
 
 Tests covering the experiment-side `RunResult` runtime-metric derivation:
@@ -170,7 +176,10 @@ Library-side tests for controllers, episode management, rewards, and optimizer w
 - `scripts/tables/`, `scripts/plots/`, `scripts/report_*.py` — reporting scripts over archived result JSON files.
 - `tests/test_runtime_metrics.py` — runtime-metric derivation tests.
 - `data/`, `.hf_cache/` — local dataset/model/tokenization caches, gitignored.
-- `results/` — local run outputs. Selected compact archived result artifacts used by the thesis are tracked; large temporary outputs, checkpoints, caches, and raw logs are not tracked.
+- `results/` — local run outputs written by the experiment runners. Selected compact archived result artifacts used by the thesis are tracked; large temporary outputs, checkpoints, caches, and raw logs are not tracked.
+- `archived_results/` — canonical archived run outputs that the reporting scripts read from; place or extract the archived bundle here. See [`archived_results/README.md`](archived_results/README.md).
+- `generated_artifacts/` — curated tables, CSV files, and figures used in the thesis and ICONIP 2026 paper. See [`generated_artifacts/README.md`](generated_artifacts/README.md).
+- `reproduced_artifacts/` — scratch output for locally regenerated tables and figures, kept separate so the curated files are not overwritten. See [`reproduced_artifacts/README.md`](reproduced_artifacts/README.md).
 
 ## Reproducibility notes
 

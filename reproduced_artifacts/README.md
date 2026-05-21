@@ -49,7 +49,12 @@ reproduced_artifacts/
     nlp_tables/
 ```
 
-This mirrors the structure of `generated_artifacts/` so that regenerated outputs can be compared easily.
+This mirrors the structure of `generated_artifacts/` so that regenerated outputs can be compared easily. Two scripts deviate from the mirror:
+
+- `make_nlp_noise_ablation_table.py` writes `tables/nlp_noise_ablation_table.tex` at the top of `tables/`; the curated copy of that table lives under `tables/nlp_tables/` (it is also regenerated there by `make_nlp_latex_tables.py`).
+- `plot_wallclock_overhead` writes to `figures/compute/`, which has no curated counterpart under `generated_artifacts/figures/`.
+
+Table scripts also emit a few combined files (e.g. `*_tables_all.tex`, `all_nlp_tables.tex`) that are not curated in `generated_artifacts/`; these are expected extras, not regressions.
 
 ## Notes
 
