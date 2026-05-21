@@ -1,8 +1,13 @@
 """Peak-checkpoint memorization diagnostics on noisy \\cifar{} (§5.3.4).
 
-Visualises Table~5.6 of the thesis as a scatter of corrupted-subset accuracies
-at the peak validation checkpoint. The two axes are the two corrupted-subset
-diagnostics:
+Scatters the corrupted-subset accuracies at the peak validation checkpoint,
+computed directly from the rerun JSONs under ``results/checkpointing/``. The
+rerun files stop at the peak-validation checkpoint, so each file's *final*
+diagnostics are the peak-checkpoint diagnostics. Loading and aggregation are
+delegated to ``scripts.tables.make_checkpointing_tables`` (the source of truth
+for Table 5.6), so this figure and that table can never drift apart.
+
+The two axes are the two corrupted-subset diagnostics:
 
     x-axis: Corr. vs noisy (accuracy of the model against the corrupted
             training label). Lower is better — high values indicate the
@@ -28,7 +33,7 @@ Two panels:
 
 CLI:
     python -m scripts.plots.diagnostics.plot_peak_checkpoint_diagnostics \\
-        --out-dir results/plots/diagnostics
+        --runs-root results/checkpointing --out-dir results/plots/diagnostics
 """
 
 from __future__ import annotations
@@ -48,6 +53,7 @@ from scripts.plots._style import (
     write_missing,
     write_summary,
 )
+from scripts.tables.make_checkpointing_tables import aggregate, parse_result
 
 
 NAME = "peak_checkpoint_diagnostics"
@@ -69,6 +75,26 @@ SLOT_LABELS = {
 # Marker per optimizer.
 OPT_MARKERS = {"AdamW": "o", "SGD+M": "s"}
 
+# Translate the table module's aggregation keys onto this figure's vocabulary.
+# Optimizer keys -> the labels OPT_MARKERS expects; variant keys -> the SLOT_*
+# method keys (note the table's "baseline" is this figure's "flat").
+OPT_KEY_TO_LABEL = {"adamw": "AdamW", "sgd": "SGD+M"}
+VARIANT_KEY_TO_SLOT = {
+    "baseline":    "flat",
+    "aees":        "aees",
+    "cosine":      "cosine",
+    "cosine_aees": "cosine_aees",
+}
+
+# Every cell the figure relies on: both optimizers (the .summary.txt reports
+# both) for both settings and all four methods. Missing/short cells fail loudly.
+EXPECTED_SETTINGS = ("asym20", "sym40")
+EXPECTED_OPTIMIZERS = ("adamw", "sgd")
+EXPECTED_VARIANTS = ("baseline", "aees", "cosine", "cosine_aees")
+
+# Order in which methods are listed in the summary (table's variant order).
+SUMMARY_METHOD_ORDER = ("flat", "aees", "cosine", "cosine_aees")
+
 
 @dataclass(frozen=True)
 class Point:
@@ -81,24 +107,66 @@ class Point:
     corr_clean_std: float
 
 
-# Data sourced verbatim from Table 5.6 of the thesis. We plot AdamW only:
-# the SGD+M Cosine + AEES point on asym20 has a bimodal seed distribution
-# (some seeds peak early, some at the end) and a 36.1 pp std on Corr. noisy,
-# which produces error bars that span most of the panel and obscure the
-# clean Cosine-vs-AEES contrast. The SGD+M numbers are still reported in
-# Table 5.6 for reference.
-POINTS: tuple[Point, ...] = (
-    # Asym. 20% — AdamW.
-    Point("asym20", "AdamW", "flat",         37.0, 5.8, 45.8, 3.6),
-    Point("asym20", "AdamW", "aees",         29.0, 8.6, 53.8, 5.1),
-    Point("asym20", "AdamW", "cosine",      100.0, 0.0,  0.0, 0.0),
-    Point("asym20", "AdamW", "cosine_aees",  24.6, 7.7, 57.3, 4.5),
-    # Sym. 40% — AdamW.
-    Point("sym40",  "AdamW", "flat",          3.6, 1.7, 48.4, 1.3),
-    Point("sym40",  "AdamW", "aees",          3.1, 1.1, 52.8, 0.9),
-    Point("sym40",  "AdamW", "cosine",        1.9, 0.2, 53.0, 0.5),
-    Point("sym40",  "AdamW", "cosine_aees",   1.9, 0.4, 53.5, 0.7),
-)
+def _load_points(runs_root: pathlib.Path) -> list[Point]:
+    """Read and aggregate the checkpointing reruns into per-cell Points.
+
+    Globs ``<runs_root>/cifar100_asym20/*.json`` and ``.../cifar100_sym40``,
+    reuses the table module's ``parse_result``/``aggregate`` so the numbers are
+    identical to Table 5.6, then maps each aggregated cell onto a Point. The
+    aggregated means/SDs are fractions in [0, 1]; we scale to percent here.
+
+    Fails loudly: missing input directories, parse errors, and any
+    (setting, optimizer, method) cell that is absent or has <2 seeds all raise.
+    """
+    json_paths = sorted(
+        list((runs_root / "cifar100_asym20").glob("*.json"))
+        + list((runs_root / "cifar100_sym40").glob("*.json"))
+    )
+    if not json_paths:
+        raise FileNotFoundError(
+            f"No JSON files found under {runs_root / 'cifar100_asym20'} or "
+            f"{runs_root / 'cifar100_sym40'}"
+        )
+
+    rows = [parse_result(path) for path in json_paths]
+    aggregated = aggregate(rows)
+
+    # Index by the table's keys so completeness can be checked exactly.
+    cells = {
+        (c["setting_key"], c["optimizer_key"], c["variant_key"]): c
+        for c in aggregated
+    }
+
+    problems: list[str] = []
+    for setting in EXPECTED_SETTINGS:
+        for optimizer in EXPECTED_OPTIMIZERS:
+            for variant in EXPECTED_VARIANTS:
+                cell = cells.get((setting, optimizer, variant))
+                if cell is None:
+                    problems.append(f"absent cell: {setting}/{optimizer}/{variant}")
+                elif cell["n"] < 2:
+                    problems.append(
+                        f"cell {setting}/{optimizer}/{variant} has only "
+                        f"{cell['n']} seed(s); need >= 2 for a sample SD"
+                    )
+    if problems:
+        raise ValueError(
+            "Incomplete checkpointing data; cannot build "
+            f"{NAME}:\n  - " + "\n  - ".join(problems)
+        )
+
+    points: list[Point] = []
+    for cell in aggregated:
+        points.append(Point(
+            setting=cell["setting_key"],
+            optimizer=OPT_KEY_TO_LABEL[cell["optimizer_key"]],
+            method=VARIANT_KEY_TO_SLOT[cell["variant_key"]],
+            corr_noisy_mean=cell["corr_noisy_mean"] * 100.0,
+            corr_noisy_std=cell["corr_noisy_sd"] * 100.0,
+            corr_clean_mean=cell["corr_clean_mean"] * 100.0,
+            corr_clean_std=cell["corr_clean_sd"] * 100.0,
+        ))
+    return points
 
 
 def _draw_panel(ax, points: list[Point], setting: str):
@@ -129,11 +197,16 @@ def _draw_panel(ax, points: list[Point], setting: str):
         ax.set_title("Sym. 40%")
 
 
-def _build_figure():
+def _build_figure(points: list[Point]):
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.0))
 
-    asym20_pts = [p for p in POINTS if p.setting == "asym20"]
-    sym40_pts = [p for p in POINTS if p.setting == "sym40"]
+    # We plot AdamW only: the SGD+M Cosine + AEES point on asym20 has a bimodal
+    # seed distribution (some seeds peak early, some at the end) and a ~36 pp std
+    # on Corr. noisy, which produces error bars that span most of the panel and
+    # obscure the clean Cosine-vs-AEES contrast. The SGD+M numbers are still
+    # reported in the .summary.txt for reference.
+    asym20_pts = [p for p in points if p.setting == "asym20" and p.optimizer == "AdamW"]
+    sym40_pts = [p for p in points if p.setting == "sym40" and p.optimizer == "AdamW"]
 
     # Asym 20%: widely spread (Cosine at 100,0 vs AEES at ~25,55).
     # Full 0–100 range on both axes is needed to show the contrast.
@@ -186,13 +259,18 @@ def _build_figure():
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--runs-root", type=pathlib.Path, default=pathlib.Path("results/checkpointing"),
+        help="Directory holding cifar100_asym20/ and cifar100_sym40/ rerun JSONs.",
+    )
+    parser.add_argument(
         "--out-dir", type=pathlib.Path, required=True,
         help="Output directory for the peak_checkpoint_diagnostics outputs.",
     )
     args = parser.parse_args(argv)
 
     try:
-        fig = _build_figure()
+        points = _load_points(args.runs_root)
+        fig = _build_figure(points)
     except Exception as exc:
         reason = (
             f"Failed to build {NAME}.\n\n"
@@ -204,19 +282,21 @@ def main(argv: list[str] | None = None) -> int:
 
     pdf_path, png_path = save_figure(fig, args.out_dir, NAME)
 
+    by_cell = {(p.setting, p.optimizer, p.method): p for p in points}
+
     summary_lines: list[str] = [
         "Peak-checkpoint memorization diagnostics (CIFAR-100 noisy labels)",
-        "Source: Table 5.6 of the thesis (corrupted-subset accuracies at the",
-        "        peak-validation checkpoint, mean ± SD over 5 seeds).",
+        f"Source: {args.runs_root}/ reruns (final diagnostics == peak-checkpoint",
+        "        diagnostics), aggregated via scripts.tables.make_checkpointing_tables.",
+        "        Values are mean ± sample SD (ddof=1) over seeds.",
         "",
     ]
     for setting in ("asym20", "sym40"):
         summary_lines.append(f"Setting: {setting}")
         for opt in ("AdamW", "SGD+M"):
             summary_lines.append(f"  Optimizer: {opt}")
-            for p in POINTS:
-                if p.setting != setting or p.optimizer != opt:
-                    continue
+            for method in SUMMARY_METHOD_ORDER:
+                p = by_cell[(setting, opt, method)]
                 summary_lines.append(
                     f"    {SLOT_LABELS[p.method]:18s} "
                     f"Corr. noisy = {p.corr_noisy_mean:5.1f} ± {p.corr_noisy_std:4.1f}  "
