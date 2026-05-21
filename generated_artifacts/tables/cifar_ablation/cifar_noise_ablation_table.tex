@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\caption{Small-noise gradient-injection ablation on noisy CIFAR-100 (symmetric 20\% training-label noise). Both conditions use the AEES controller with the \texttt{trend} context, episode length 200, over a 100-epoch budget; $n$ seeds. `No injection' restricts the controller to $\sigma=0$ (learning-rate multiplier axis only); `Small-noise injection' adds $\sigma \in \{0.0025, 0.005\}$ gradient-noise candidate arms. Peak and final validation accuracy are mean $\pm$ sample standard deviation; gap is peak$-$final in percentage points. Bold marks the higher (better) value per accuracy column. Note: both conditions use the learning-rate candidate grid $\{0.5,1.0,2.0\}$ (the no-injection seed~0 used $\{0.5,1.0,1.5\}$), so the gradient-noise injection axis is the systematic difference between conditions.}
+\label{tab:cifar_noise_ablation}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcccc}
+\toprule
+Condition & $n$ & Peak (\%) & Final (\%) & Gap (pp) \\
+\midrule
+No gradient noise & 5 & \textbf{61.28 $\pm$ 1.59} & \textbf{54.04 $\pm$ 2.85} & 7.23 \\
+Gradient-noise injection & 5 & 56.72 $\pm$ 2.25 & 52.02 $\pm$ 3.11 & 4.71 \\
+\bottomrule
+\end{tabular}
+\end{table}

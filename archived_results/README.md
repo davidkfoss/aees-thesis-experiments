@@ -46,6 +46,7 @@ The ICONIP 2026 paper submission uses a scoped subset of this archive, primarily
 - `nlp_noise_ablation/`
 - `compute_overhead/`
 - `checkpointing/`
+- `cifar_ablation/`
 
 ## Regeneration workflow
 
@@ -59,6 +60,7 @@ Figure-generation scripts require explicit input and output paths (`--runs-root`
 | `controllers.plot_update_norm_trajectory`                        | `archived_results` (spans `cifar_clean/`, `sst2/`, `noisy_agnews/`)                                      | —                                                                            |
 | `nlp_ablation.plot_agnews_noise_ablation_barplot` / `..._curves` | `archived_results` (the whole tree; walked recursively across `noisy_agnews/` and `nlp_noise_ablation/`) | —                                                                            |
 | `diagnostics.plot_peak_checkpoint_diagnostics`                   | `archived_results/checkpointing`                                                                         | —                                                                            |
+| `cifar_ablation.plot_cifar_noise_ablation_barplot`               | `archived_results/cifar_noise_ablation`                                                                  | —                                                                            |
 
 Example figure command:
 

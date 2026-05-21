@@ -35,6 +35,7 @@ Suggested layout:
 reproduced_artifacts/
   figures/
     cifar/
+    cifar_ablation/
     controllers/
     diagnostics/
     method/
@@ -43,6 +44,7 @@ reproduced_artifacts/
   tables/
     ablations/
     checkpointing/
+    cifar_ablation/
     cifar_clean/
     cifar_noisy/
     compute_overhead/

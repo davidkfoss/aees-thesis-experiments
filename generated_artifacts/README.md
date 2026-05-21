@@ -10,6 +10,7 @@ These artifacts are generated from archived experiment results and are included 
 generated_artifacts/
   figures/
     cifar/
+    cifar_ablation/
     controllers/
     diagnostics/
     method/
@@ -18,6 +19,7 @@ generated_artifacts/
   tables/
     ablations/
     checkpointing/
+    cifar_ablation/
     cifar_clean/
     cifar_noisy/
     compute_overhead/
