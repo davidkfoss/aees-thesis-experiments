@@ -1,31 +1,34 @@
 """Per-arm reward distribution (violin plot).
 
 For a given setting, pool the clipped log-EMA episode reward across all seeds
-and all completed episodes, group by the selected arm value, and draw a violin
-per arm. Shows which arms tend to produce positive vs. negative rewards.
+and completed episodes, group by the selected arm value, and draw one violin
+per arm. The plot shows which arms tend to produce positive or negative rewards.
 
 Settings:
-    cifar_sym40       — LR axis only (single panel). Noisy CIFAR sym40 AdamW
-                        AEES-LR (adamw_aees_ep200_lr05102).
+    cifar_sym40       — LR axis only (single panel). Noisy CIFAR-100 40%
+                        symmetric AdamW AEES-LR
+                        (adamw_aees_ep200_lr05102).
     agnews_noisy      — LR axis | sigma axis (two panels, shared y).
-                        AG News sym20 AEES-Dual + warmup-linear.
+                        AG News 20% symmetric AEES-Dual + warmup-linear.
 
-CLI:
-    python -m scripts.plots.controllers.plot_reward_per_arm \
-        --runs-root results/cifar_noisy   --out-dir results/plots/controllers \
+Typical reproduction commands:
+    uv run python -m scripts.plots.controllers.plot_reward_per_arm \\
+        --runs-root archived_results/cifar_noisy \\
+        --out-dir reproduced_artifacts/figures/controllers \\
         --setting cifar_sym40
 
-    python -m scripts.plots.controllers.plot_reward_per_arm \
-        --runs-root results/noisy_agnews  --out-dir results/plots/controllers \
+    uv run python -m scripts.plots.controllers.plot_reward_per_arm \\
+        --runs-root archived_results/noisy_agnews \\
+        --out-dir reproduced_artifacts/figures/controllers \\
         --setting agnews_noisy
 
-Outputs (on success):
-    reward_per_arm_<setting>.pdf
-    reward_per_arm_<setting>.png
-    reward_per_arm_<setting>.summary.txt
+Outputs on success:
+    <out-dir>/reward_per_arm_<setting>.pdf
+    <out-dir>/reward_per_arm_<setting>.png
+    <out-dir>/reward_per_arm_<setting>.summary.txt
 
-Outputs (on failure):
-    reward_per_arm_<setting>.MISSING.md
+On failure:
+    <out-dir>/reward_per_arm_<setting>.MISSING.md
 """
 
 from __future__ import annotations
@@ -420,7 +423,8 @@ def _per_arm_stats(per_arm: list[list[float]]) -> list[dict[str, float]]:
                 "n": int(arr.size),
                 "mean": float(arr.mean()),
                 "median": float(np.median(arr)),
-                "std": float(arr.std(ddof=1)) if arr.size > 1 else 0.0,  # sample std
+                # sample std
+                "std": float(arr.std(ddof=1)) if arr.size > 1 else 0.0,
                 "frac_pos": float((arr > 0).mean()),
             }
         )

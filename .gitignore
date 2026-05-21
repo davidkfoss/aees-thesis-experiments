@@ -34,3 +34,11 @@ results/*
 .hf_cache/
 
 *.egg-info
+
+archived_results/**
+!archived_results/README.md
+!archived_results/.gitkeep
+
+reproduced_artifacts/**
+!reproduced_artifacts/README.md
+!reproduced_artifacts/.gitkeep

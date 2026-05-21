@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{AG News fine-tuning results under 20\% symmetric training-label noise, with clean validation labels and AdamW as the base optimizer. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better. Bold and italics mark the best and second-best values in the table, respectively.}}
+\label{tab:agnews-noise20}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccc}
+\toprule
+Method & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+AdamW & 92.72 $\pm$ 0.22 & 90.12 $\pm$ 0.57 & 2.59 $\pm$ 0.69 & 1.80 $\pm$ 0.84 \\
+AdamW + warmup-linear & 93.19 $\pm$ 0.19 & 90.79 $\pm$ 0.17 & 2.40 $\pm$ 0.28 & 2.00 $\pm$ 0.00 \\
+AEES & \emph{93.32 $\pm$ 0.12} & \emph{92.85 $\pm$ 0.55} & \emph{0.47 $\pm$ 0.56} & 4.40 $\pm$ 0.55 \\
+AEES + warmup-linear & \textbf{93.55 $\pm$ 0.07} & \textbf{93.51 $\pm$ 0.09} & \textbf{0.05 $\pm$ 0.07} & 4.60 $\pm$ 0.55 \\
+\bottomrule
+\end{tabular}
+\end{table}

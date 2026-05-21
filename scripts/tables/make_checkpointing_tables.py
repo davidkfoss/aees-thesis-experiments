@@ -3,14 +3,14 @@
 Create LaTeX tables for CIFAR-100 peak-checkpoint diagnostics.
 
 Expected input layout:
-  results/checkpointing/cifar100_asym20/*.json
-  results/checkpointing/cifar100_sym40/*.json
+  archived_results/checkpointing/cifar100_asym20/*.json
+  archived_results/checkpointing/cifar100_sym40/*.json
 
 Expected output:
-  results/tables/checkpointing/checkpoint_diagnostics_main.tex
-  results/tables/checkpointing/checkpoint_diagnostics_appendix.tex
-  results/tables/checkpointing/checkpoint_diagnostics_main.csv
-  results/tables/checkpointing/checkpoint_diagnostics_detailed.csv
+  reproduced_artifacts/tables/checkpointing/checkpoint_diagnostics_main.tex
+  reproduced_artifacts/tables/checkpointing/checkpoint_diagnostics_appendix.tex
+  reproduced_artifacts/tables/checkpointing/checkpoint_diagnostics_main.csv
+  reproduced_artifacts/tables/checkpointing/checkpoint_diagnostics_detailed.csv
 
 The rerun files are assumed to stop at the selected/peak epoch, so the final
 diagnostics in each JSON file are interpreted as peak-checkpoint diagnostics.
@@ -714,13 +714,13 @@ def main() -> None:
     parser.add_argument(
         "--results-root",
         type=Path,
-        default=Path("results"),
+        default=Path("archived_results"),
         help="Root results directory containing checkpointing/cifar100_asym20 and checkpointing/cifar100_sym40.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("results/tables/checkpointing"),
+        default=Path("reproduced_artifacts/tables/checkpointing"),
         help="Directory where LaTeX and CSV tables are written.",
     )
     args = parser.parse_args()

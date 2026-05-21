@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccccc}
+\toprule
+\multirow{2}{*}{Method} & \multirow{2}{*}{$n$} & \multicolumn{4}{c}{Validation} \\
+& & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+Fixed 1.0 & 5 & 70.3 $\pm$ 0.2 & \emph{69.6 $\pm$ 0.5} & \textbf{0.7 $\pm$ 0.4} & 188.6 $\pm$ 10.4 \\
+Fixed 0.5 & 5 & \emph{71.0 $\pm$ 0.3} & \textbf{70.3 $\pm$ 0.5} & \emph{0.8 $\pm$ 0.5} & 169.0 $\pm$ 19.8 \\
+Fixed 2.0 & 5 & 69.1 $\pm$ 0.7 & 68.0 $\pm$ 0.5 & 1.1 $\pm$ 0.4 & 167.2 $\pm$ 31.1 \\
+AEES & 5 & \textbf{72.1 $\pm$ 0.2} & 69.0 $\pm$ 3.4 & 3.1 $\pm$ 3.6 & 124.0 $\pm$ 30.4 \\
+\bottomrule
+\end{tabular}
+\caption{Fixed learning-rate multiplier ablation on clean CIFAR-100. The fixed multipliers use the same LR multiplier values available to the AEES controller. Fixed 1.0 corresponds to the AdamW baseline. This ablation tests whether AEES improves beyond choosing a single static LR multiplier. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better. Bold and italics mark the best and second-best values, respectively.}
+\label{tab:cifar_clean_fixed_lr_ablation}
+\end{table}

@@ -1,0 +1,16 @@
+runs-root: /Users/davidfoss/aees-thesis-experiments/results/cifar_noisy
+noise-setting: sym20
+
+Per-cell seed counts and statistics:
+  AdamW / flat         (Flat): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=17.00 peak_acc_mean=58.59% final_acc_mean=54.12%
+  AdamW / cosine       (Cosine): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=52.00 peak_acc_mean=58.62% final_acc_mean=58.04%
+  AdamW / aees_lr      (AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=18.00 peak_acc_mean=62.19% final_acc_mean=55.60%
+  AdamW / cosine_aees  (Cosine + AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=19.00 peak_acc_mean=62.01% final_acc_mean=58.37%
+  SGD+M / flat         (Flat): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=19.00 peak_acc_mean=57.04% final_acc_mean=48.64%
+  SGD+M / cosine       (Cosine): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=171.00 peak_acc_mean=62.22% final_acc_mean=62.04%
+  SGD+M / aees_lr      (AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=24.00 peak_acc_mean=62.48% final_acc_mean=56.42%
+  SGD+M / cosine_aees  (Cosine + AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=26.00 peak_acc_mean=63.07% final_acc_mean=61.43%
+
+outputs:
+  - results/plots/cifar/cifar_sym20_curves.pdf
+  - results/plots/cifar/cifar_sym20_curves.png

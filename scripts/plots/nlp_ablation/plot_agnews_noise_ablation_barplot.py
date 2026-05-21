@@ -1,20 +1,23 @@
-"""Noisy AG News σ-axis falsification: peak vs. final grouped bar chart.
+"""Noisy AG News sigma-axis falsification: peak vs. final grouped bar chart.
 
-Companion to plot_agnews_noise_ablation_curves.py. Seven conditions side-by-
-side. Each condition shows two bars: solid for peak (best epoch) accuracy
-and hatched (\"////\") for final (last epoch) accuracy. Mean across 5 seeds
-with ±1 σ error caps. σ=0 baselines on the left, σ>0 cluster on the right;
-within-cluster the y-positions cluster between ~93.4 and ~93.6.
+Companion to plot_agnews_noise_ablation_curves.py. Each condition shows two
+bars: solid for peak validation accuracy and hatched ("////") for final
+validation accuracy. Error bars show +/- 1 SD across five seeds. The sigma=0
+baselines are shown on the left, and the nonzero-noise conditions are grouped
+on the right.
 
-CLI:
-    python -m scripts.plots.nlp_ablation.plot_agnews_noise_ablation_barplot \
-        --runs-root results \
-        --out-dir results/plots/nlp_ablation
+Typical reproduction command:
+    uv run python -m scripts.plots.nlp_ablation.plot_agnews_noise_ablation_barplot \\
+        --runs-root archived_results \\
+        --out-dir reproduced_artifacts/figures/nlp_ablation
 
-Outputs (on success):
-    agnews_noise_ablation_barplot.{pdf,png,summary.txt}
+Outputs on success:
+    <out-dir>/agnews_noise_ablation_barplot.pdf
+    <out-dir>/agnews_noise_ablation_barplot.png
+    <out-dir>/agnews_noise_ablation_barplot.summary.txt
+
 On failure:
-    agnews_noise_ablation_barplot.MISSING.md
+    <out-dir>/agnews_noise_ablation_barplot.MISSING.md
 """
 
 from __future__ import annotations

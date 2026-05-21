@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-RESULTS_ROOT = Path("results/cifar_clean")
-OUTPUT_DIR = Path("results/plots/cifar")
+DEFAULT_RESULTS_ROOT = Path("archived_results/cifar_clean")
+DEFAULT_OUTPUT_DIR = Path("reproduced_artifacts/figures/cifar")
 
 LAST_N_EPOCHS = 20
 
@@ -33,6 +34,31 @@ METHOD_ORDER = [
 ]
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Plot clean CIFAR-100 late-stage validation trajectories."
+    )
+    parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=DEFAULT_RESULTS_ROOT,
+        help=(
+            "Directory containing clean CIFAR-100 JSON result files. "
+            f"Default: {DEFAULT_RESULTS_ROOT}"
+        ),
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help=(
+            "Output directory for generated plots. "
+            f"Default: {DEFAULT_OUTPUT_DIR}"
+        ),
+    )
+    return parser.parse_args()
+
+
 def get_val_accuracies(data: dict) -> List[float]:
     for key in ["val_accuracies", "val_accuracy", "validation_accuracies"]:
         vals = data.get(key)
@@ -41,10 +67,13 @@ def get_val_accuracies(data: dict) -> List[float]:
     return []
 
 
-def load_runs() -> Dict[str, List[Tuple[int, List[float]]]]:
+def load_runs(results_root: Path) -> Dict[str, List[Tuple[int, List[float]]]]:
     runs: Dict[str, List[Tuple[int, List[float]]]] = defaultdict(list)
 
-    for path in RESULTS_ROOT.iterdir():
+    if not results_root.exists():
+        raise FileNotFoundError(f"Results root does not exist: {results_root}")
+
+    for path in results_root.iterdir():
         if not path.is_file() or path.suffix != ".json":
             continue
 
@@ -62,11 +91,13 @@ def load_runs() -> Dict[str, List[Tuple[int, List[float]]]]:
 
         try:
             data = json.loads(path.read_text())
-        except Exception:
+        except Exception as exc:
+            print(f"Skipping unreadable JSON file {path}: {exc}")
             continue
 
         vals = get_val_accuracies(data)
         if not vals:
+            print(f"Skipping file without validation accuracies: {path}")
             continue
 
         runs[method].append((seed, vals))
@@ -86,7 +117,10 @@ def get_epoch_axis(vals: List[float], n: int) -> np.ndarray:
     return np.arange(start_epoch, len(vals) + 1)
 
 
-def plot_aees_individual_seeds(runs: Dict[str, List[Tuple[int, List[float]]]]) -> None:
+def plot_aees_individual_seeds(
+    runs: Dict[str, List[Tuple[int, List[float]]]],
+    output_dir: Path,
+) -> None:
     if "AEES" not in runs:
         raise RuntimeError("No AEES runs found.")
 
@@ -99,13 +133,13 @@ def plot_aees_individual_seeds(runs: Dict[str, List[Tuple[int, List[float]]]]) -
 
     plt.xlabel("Epoch")
     plt.ylabel("Validation accuracy (%)")
-    plt.title(f"Clean CIFAR-100 AEES late-stage validation trajectories")
+    plt.title("Clean CIFAR-100 AEES late-stage validation trajectories")
     plt.grid(True, alpha=0.25)
     plt.legend(ncol=2, fontsize=8, frameon=False)
     plt.tight_layout()
 
-    out_png = OUTPUT_DIR / "cifar_clean_aees_late_stage_individual_seeds.png"
-    out_pdf = OUTPUT_DIR / "cifar_clean_aees_late_stage_individual_seeds.pdf"
+    out_png = output_dir / "cifar_clean_aees_late_stage_individual_seeds.png"
+    out_pdf = output_dir / "cifar_clean_aees_late_stage_individual_seeds.pdf"
 
     plt.savefig(out_png, dpi=300, bbox_inches="tight")
     plt.savefig(out_pdf, bbox_inches="tight")
@@ -125,11 +159,14 @@ def align_last_n(
     min_len = min(len(vals) for _, vals in method_runs)
     use_n = min(n, min_len)
 
-    arr = np.array([truncate_last_epochs(vals, use_n)
-                   for _, vals in method_runs], dtype=float)
+    arr = np.array(
+        [truncate_last_epochs(vals, use_n) for _, vals in method_runs],
+        dtype=float,
+    )
     arr *= 100.0
 
-    # Use relative late-stage epoch index to avoid problems if some runs have different lengths.
+    # Use relative late-stage epoch index to avoid problems if some runs have
+    # different lengths.
     x = np.arange(-use_n + 1, 1)
 
     mean = arr.mean(axis=0)
@@ -138,7 +175,10 @@ def align_last_n(
     return x, mean, std
 
 
-def plot_fixed_vs_aees_mean_std(runs: Dict[str, List[Tuple[int, List[float]]]]) -> None:
+def plot_fixed_vs_aees_mean_std(
+    runs: Dict[str, List[Tuple[int, List[float]]]],
+    output_dir: Path,
+) -> None:
     plt.figure(figsize=(7.0, 4.2))
 
     plotted_any = False
@@ -165,8 +205,8 @@ def plot_fixed_vs_aees_mean_std(runs: Dict[str, List[Tuple[int, List[float]]]]) 
     plt.legend(frameon=False)
     plt.tight_layout()
 
-    out_png = OUTPUT_DIR / "cifar_clean_fixed_vs_aees_late_stage_mean_std.png"
-    out_pdf = OUTPUT_DIR / "cifar_clean_fixed_vs_aees_late_stage_mean_std.pdf"
+    out_png = output_dir / "cifar_clean_fixed_vs_aees_late_stage_mean_std.png"
+    out_pdf = output_dir / "cifar_clean_fixed_vs_aees_late_stage_mean_std.pdf"
 
     plt.savefig(out_png, dpi=300, bbox_inches="tight")
     plt.savefig(out_pdf, bbox_inches="tight")
@@ -197,13 +237,14 @@ def print_coverage(runs: Dict[str, List[Tuple[int, List[float]]]]) -> None:
 
 
 def main() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    args = parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    runs = load_runs()
+    runs = load_runs(args.runs_root)
     print_coverage(runs)
 
-    plot_aees_individual_seeds(runs)
-    plot_fixed_vs_aees_mean_std(runs)
+    plot_aees_individual_seeds(runs, args.out_dir)
+    plot_fixed_vs_aees_mean_std(runs, args.out_dir)
 
 
 if __name__ == "__main__":

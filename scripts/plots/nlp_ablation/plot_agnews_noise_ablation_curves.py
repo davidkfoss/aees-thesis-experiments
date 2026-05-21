@@ -1,31 +1,43 @@
-"""Noisy AG News σ-axis falsification: 7-condition validation trajectory.
+"""Noisy AG News sigma-axis falsification: validation trajectories.
 
-Visualises that on 20% symmetric noisy AG News every σ>0 condition — fixed
-σ=0.005, fixed σ=0.01, random σ over {0, 0.005, 0.01}, AEES-Noise + WL, and
-AEES-Dual + WL — produces the same late-epoch validation accuracy as the
-AEES-controller variants, while both σ=0 baselines (Flat AdamW and AdamW +
-Warmup-linear) show the characteristic late-epoch drop.
+Visualizes that, on AG News with 20% symmetric training-label noise, the
+nonzero-noise conditions produce similar late-epoch validation accuracy to the
+AEES controller-driven variants, while both sigma=0 baselines, Flat AdamW and
+AdamW + Warmup-linear, show the characteristic late-epoch drop.
 
-Seven curves over 5 epochs, mean ± sample std band across 5 seeds.
+Conditions:
+    1. Flat AdamW, sigma=0
+    2. AdamW + Warmup-linear, sigma=0
+    3. Fixed sigma=0.005 + Warmup-linear
+    4. Fixed sigma=0.01 + Warmup-linear
+    5. Random sigma in {0, 0.005, 0.01} + Warmup-linear
+    6. AEES-Noise + Warmup-linear
+    7. AEES-Dual + Warmup-linear
 
-CLI:
-    python -m scripts.plots.nlp_ablation.plot_agnews_noise_ablation_curves \
-        --runs-root results \
-        --out-dir results/plots/nlp_ablation
+The figure shows validation accuracy over five epochs, with mean +/- sample SD
+bands across five seeds.
+
+Typical reproduction command:
+    uv run python -m scripts.plots.nlp_ablation.plot_agnews_noise_ablation_curves \\
+        --runs-root archived_results \\
+        --out-dir reproduced_artifacts/figures/nlp_ablation
 
 Reads from:
-    {runs-root}/noisy_agnews/seed_<N>/agnews_noise20_adamw_warmup_linear_...    (AdamW + WL σ=0)
-    {runs-root}/noisy_agnews/seed_<N>/agnews_noise20_aees_warmup_linear_...     (AEES-Dual + WL)
-    {runs-root}/nlp_noise_ablation/agnews_noise20_adamw_none_...                 (Flat σ=0)
-    {runs-root}/nlp_noise_ablation/agn20_fixed005_seed*.json                     (Fixed σ=0.005 + WL)
-    {runs-root}/nlp_noise_ablation/agn20_fixed01_seed*.json                      (Fixed σ=0.01 + WL)
-    {runs-root}/nlp_noise_ablation/agn20_ada_rnd_seed*.json                      (Random σ + WL)
-    {runs-root}/nlp_noise_ablation/agnews_noise20_aees_noiseonly_warmup_linear_* (AEES-Noise + WL)
+    <runs-root>/noisy_agnews/seed_<N>/agnews_noise20_adamw_warmup_linear_...
+    <runs-root>/noisy_agnews/seed_<N>/agnews_noise20_aees_warmup_linear_...
+    <runs-root>/nlp_noise_ablation/agnews_noise20_adamw_none_...
+    <runs-root>/nlp_noise_ablation/agn20_fixed005_seed*.json
+    <runs-root>/nlp_noise_ablation/agn20_fixed01_seed*.json
+    <runs-root>/nlp_noise_ablation/agn20_ada_rnd_seed*.json
+    <runs-root>/nlp_noise_ablation/agnews_noise20_aees_noiseonly_warmup_linear_*
 
-Outputs (on success):
-    agnews_noise_ablation_curves.{pdf,png,summary.txt}
+Outputs on success:
+    <out-dir>/agnews_noise_ablation_curves.pdf
+    <out-dir>/agnews_noise_ablation_curves.png
+    <out-dir>/agnews_noise_ablation_curves.summary.txt
+
 On failure:
-    agnews_noise_ablation_curves.MISSING.md
+    <out-dir>/agnews_noise_ablation_curves.MISSING.md
 """
 
 from __future__ import annotations

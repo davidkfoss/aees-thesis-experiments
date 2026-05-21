@@ -1,17 +1,22 @@
 """Task 10 — Wall-clock overhead bar chart.
 
 Grouped horizontal bar chart showing per-epoch wall-clock overhead (%) of each
-AEES variant (and the matching scheduler-only baseline) against the
-NO-scheduler baseline within the same (task, optimizer). Companion to
+AEES variant and the matching scheduler-only baseline against the no-scheduler
+baseline within the same (task, optimizer). Companion to
 ``tables/compute_overhead_detailed_table.tex``.
 
-Outputs (on success):
-    results/plots/compute/wallclock_overhead.pdf
-    results/plots/compute/wallclock_overhead.png
-    results/plots/compute/wallclock_overhead.summary.txt
+Typical reproduction command:
+    uv run python -m scripts.plots.compute.plot_wallclock_overhead \\
+        --runs-root archived_results/compute_overhead \\
+        --out-dir reproduced_artifacts/plots/compute
+
+Outputs on success:
+    <out-dir>/wallclock_overhead.pdf
+    <out-dir>/wallclock_overhead.png
+    <out-dir>/wallclock_overhead.summary.txt
 
 On failure:
-    results/plots/compute/wallclock_overhead.MISSING.md
+    <out-dir>/wallclock_overhead.MISSING.md
 """
 
 from __future__ import annotations

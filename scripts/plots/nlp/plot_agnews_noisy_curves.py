@@ -1,31 +1,33 @@
-"""Validation-accuracy trajectories on noisy AG News (20% symmetric).
+"""Validation-accuracy trajectories on noisy AG News with 20% symmetric noise.
 
-Single-panel figure: epoch (1..5) on x-axis, validation accuracy (%) on y-axis,
-mean +/- std band per method across 5 seeds. Five lines (all AdamW; optimizer
-implied by the task name, so legend labels follow the LABEL map verbatim):
+Single-panel figure: epoch (1..5) on x-axis and validation accuracy (%) on the
+y-axis, with a mean +/- SD band per method across five seeds. All runs use
+AdamW, so the optimizer is implied by the task name.
 
+Methods:
     1. Flat                            - flat baseline
     2. Warmup-linear                   - warmup-linear baseline
     3. AEES-Dual                       - LR + noise, scheduler=none
     4. AEES-Noise + Warmup-linear      - noise-only AEES, with warmup-linear
     5. AEES-Dual + Warmup-linear       - LR + noise AEES, with warmup-linear
 
-Three of the AEES variants share variant_key="warmup_linear_aees" (identify()
-cannot distinguish lr-only / noise-only / dual + scheduler from variant_key
-alone), so we group on the finer key (variant_key, lr_active, noise_active).
+Three AEES variants share variant_key="warmup_linear_aees"; identify() cannot
+distinguish LR-only, noise-only, and dual-axis scheduler variants from
+variant_key alone. This script therefore groups runs using the finer key
+(variant_key, lr_active, noise_active).
 
-CLI:
-    python -m scripts.plots.nlp.plot_agnews_noisy_curves \
-        --runs-root results/noisy_agnews \
-        --out-dir results/plots/nlp
+Typical reproduction command:
+    uv run python -m scripts.plots.nlp.plot_agnews_noisy_curves \\
+        --runs-root archived_results/noisy_agnews \\
+        --out-dir reproduced_artifacts/figures/nlp
 
-Outputs (on success):
-    agnews_noisy_curves.pdf
-    agnews_noisy_curves.png
-    agnews_noisy_curves.summary.txt
+Outputs on success:
+    <out-dir>/agnews_noisy_curves.pdf
+    <out-dir>/agnews_noisy_curves.png
+    <out-dir>/agnews_noisy_curves.summary.txt
 
-Outputs (on failure):
-    agnews_noisy_curves.MISSING.md
+On failure:
+    <out-dir>/agnews_noisy_curves.MISSING.md
 """
 
 from __future__ import annotations

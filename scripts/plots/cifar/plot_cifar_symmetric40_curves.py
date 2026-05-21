@@ -9,8 +9,9 @@ Each method gets a hollow-circle marker at its mean peak and a filled-square
 marker at its mean final epoch.
 
 CLI:
-    python -m scripts.plots.cifar.plot_cifar_symmetric40_curves \
-        --runs-root results/cifar_noisy --out-dir results/plots/cifar
+    uv run python -m scripts.plots.cifar.plot_cifar_symmetric40_curves \
+        --runs-root archived_results/cifar_noisy \
+        --out-dir reproduced_artifacts/figures/cifar
 
 Outputs (on success):
     cifar_symmetric40_curves.pdf

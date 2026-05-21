@@ -1,0 +1,34 @@
+\begin{table}[t]
+\centering
+\small
+\caption[Peak-checkpoint diagnostics on noisy \cifar{}]{Peak-checkpoint diagnostics on noisy \cifar{}. Rows are grouped by noise setting and optimizer. The selected epoch is the epoch at which the checkpoint was evaluated. Accuracy columns are reported as mean $\pm$ standard deviation over five seeds. ``Corr. noisy'' is accuracy on corrupted training examples measured against corrupted labels, where lower values indicate less memorization of corrupted targets. ``Corr. clean'' evaluates the same corrupted examples against their original clean labels. ``Train clean'' is accuracy on the uncorrupted training examples and is included as a sanity check. Arrows indicate the preferred direction for the corrupted-subset diagnostics. Within each noise-setting and optimizer block, bold and italics mark the best and second-best corrupted-subset diagnostic values, respectively; ties in the mean are resolved by lower standard deviation.}
+\label{tab:checkpoint-diagnostics-main}
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllccccc}
+\toprule
+Setting & Opt. & Variant & Epoch & Val acc. & Corr. noisy $\downarrow$ & Corr. clean $\uparrow$ & Train clean \\
+\midrule
+\multirow{8}{*}{Asym. 20\%} & \multirow{4}{*}{\adamw{}} & Baseline & 17.4 $\pm$ 1.5 & 58.4 $\pm$ 0.4 & 37.0 $\pm$ 5.8 & 45.8 $\pm$ 3.6 & 80.9 $\pm$ 2.5 \\
+ &  & \method{} & 17.8 $\pm$ 2.5 & 61.7 $\pm$ 0.7 & \emph{29.0 $\pm$ 8.6} & \emph{53.8 $\pm$ 5.1} & 81.1 $\pm$ 4.1 \\
+ &  & Cosine & 187.0 $\pm$ 10.3 & 60.3 $\pm$ 0.6 & 100.0 $\pm$ 0.0 & 0.0 $\pm$ 0.0 & 100.0 $\pm$ 0.0 \\
+ &  & Cosine + \method{} & 18.8 $\pm$ 3.1 & 62.2 $\pm$ 0.8 & \textbf{24.6 $\pm$ 7.7} & \textbf{57.3 $\pm$ 4.5} & 80.7 $\pm$ 3.8 \\
+\cmidrule(lr){2-8}
+ & \multirow{4}{*}{\sgdm{}} & Baseline & 20.2 $\pm$ 3.6 & 57.3 $\pm$ 0.9 & \emph{29.3 $\pm$ 7.7} & \emph{49.1 $\pm$ 5.0} & 76.0 $\pm$ 3.4 \\
+ &  & \method{} & 22.8 $\pm$ 4.6 & 62.5 $\pm$ 0.3 & \textbf{27.1 $\pm$ 5.7} & \textbf{55.7 $\pm$ 3.3} & 81.3 $\pm$ 2.8 \\
+ &  & Cosine & 190.0 $\pm$ 7.3 & 62.9 $\pm$ 0.7 & 99.9 $\pm$ 0.0 & 0.0 $\pm$ 0.0 & 100.0 $\pm$ 0.0 \\
+ &  & Cosine + \method{} & 89.2 $\pm$ 92.5 & 62.3 $\pm$ 0.5 & 60.8 $\pm$ 36.1 & 31.4 $\pm$ 28.8 & 91.7 $\pm$ 7.7 \\
+\midrule
+\multirow{8}{*}{Sym. 40\%} & \multirow{4}{*}{\adamw{}} & Baseline & 15.8 $\pm$ 1.5 & 51.7 $\pm$ 0.6 & 3.6 $\pm$ 1.7 & 48.4 $\pm$ 1.3 & 70.0 $\pm$ 3.8 \\
+ &  & \method{} & 18.0 $\pm$ 1.6 & 55.0 $\pm$ 1.1 & 3.1 $\pm$ 1.1 & 52.8 $\pm$ 0.9 & 73.4 $\pm$ 3.6 \\
+ &  & Cosine & 16.0 $\pm$ 0.7 & 54.1 $\pm$ 0.7 & \textbf{1.9 $\pm$ 0.2} & \emph{53.0 $\pm$ 0.5} & 69.5 $\pm$ 1.7 \\
+ &  & Cosine + \method{} & 18.6 $\pm$ 1.5 & 54.5 $\pm$ 0.5 & \emph{1.9 $\pm$ 0.4} & \textbf{53.5 $\pm$ 0.7} & 69.7 $\pm$ 1.4 \\
+\cmidrule(lr){2-8}
+ & \multirow{4}{*}{\sgdm{}} & Baseline & 20.4 $\pm$ 1.5 & 50.1 $\pm$ 0.8 & \emph{2.9 $\pm$ 0.9} & 46.8 $\pm$ 1.4 & 67.0 $\pm$ 1.8 \\
+ &  & \method{} & 25.0 $\pm$ 2.5 & 55.6 $\pm$ 1.0 & 3.9 $\pm$ 1.7 & \emph{52.0 $\pm$ 1.7} & 76.2 $\pm$ 3.3 \\
+ &  & Cosine & 18.6 $\pm$ 1.5 & 54.0 $\pm$ 1.6 & \textbf{2.7 $\pm$ 0.6} & \textbf{52.3 $\pm$ 1.5} & 72.0 $\pm$ 4.0 \\
+ &  & Cosine + \method{} & 25.6 $\pm$ 1.9 & 54.3 $\pm$ 1.1 & 7.2 $\pm$ 5.4 & 49.7 $\pm$ 4.2 & 80.3 $\pm$ 4.3 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

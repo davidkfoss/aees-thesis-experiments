@@ -1,30 +1,31 @@
-"""Mean update-norm trajectory across three AEES regimes (hypothesis-A diagnostic).
+"""Mean update-norm trajectory across three AEES regimes.
 
 Three stacked panels, shared training-step x-axis, independent log y-axes:
 
   1. CIFAR-100 / AdamW / AEES-LR / clean
-     results/cifar_clean/cifar_clean_aees_none_seed<0-4>.json
+     archived_results/cifar_clean/cifar_clean_aees_none_seed<0-4>.json
   2. SST-2 / AdamW / AEES-Dual + warmup-linear
-     results/sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed<0-4>.json
-  3. AG News (sym20) / AdamW / AEES-Dual + warmup-linear
-     results/noisy_agnews/seed_<N>/agnews_noise20_aees_warmup_linear_5ep_coarse_highnoise_ep200_seed<N>.json
+     archived_results/sst2/sst2_aees_warmup_linear_5ep_small_ep200_trend_seed<0-4>.json
+  3. AG News 20% symmetric / AdamW / AEES-Dual + warmup-linear
+     archived_results/noisy_agnews/seed_<N>/agnews_noise20_aees_warmup_linear_5ep_coarse_highnoise_ep200_seed<N>.json
 
-Per panel: one thin alpha-shaded line per seed plus a bold mean overlay; a
-horizontal reference line marks the pooled late-training (last 20% of
-episodes per seed) median update norm. Supports/weakens hypothesis A1 in
-sections/discussion/axis_dependence.tex about cross-regime sigma scaling.
+Per panel, the figure shows one thin alpha-shaded line per seed plus a bold
+mean overlay. A horizontal reference line marks the pooled late-training median
+update norm, computed over the last 20% of episodes per seed. This diagnostic
+supports the discussion of cross-regime sigma scaling.
 
-CLI:
-    python -m scripts.plots.controllers.plot_update_norm_trajectory \\
-        --runs-root . --out-dir results/plots/controllers
+Typical reproduction command:
+    uv run python -m scripts.plots.controllers.plot_update_norm_trajectory \\
+        --runs-root archived_results \\
+        --out-dir reproduced_artifacts/figures/controllers
 
-Outputs (on success):
-    update_norm_trajectory.pdf
-    update_norm_trajectory.png
-    update_norm_trajectory.summary.txt
+Outputs on success:
+    <out-dir>/update_norm_trajectory.pdf
+    <out-dir>/update_norm_trajectory.png
+    <out-dir>/update_norm_trajectory.summary.txt
 
-Outputs (on failure):
-    update_norm_trajectory.MISSING.md
+On failure:
+    <out-dir>/update_norm_trajectory.MISSING.md
 """
 
 from __future__ import annotations

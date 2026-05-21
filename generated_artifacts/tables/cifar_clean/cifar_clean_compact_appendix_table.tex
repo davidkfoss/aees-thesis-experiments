@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lccccc}
+\toprule
+\multirow{2}{*}{Method} & \multirow{2}{*}{$n$} & \multicolumn{4}{c}{Validation} \\
+& & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+AdamW & 5 & 70.3 $\pm$ 0.2 & 69.6 $\pm$ 0.5 & 0.7 $\pm$ 0.4 & 188.6 $\pm$ 10.4 \\
+Fixed 0.5 & 5 & 71.0 $\pm$ 0.3 & 70.3 $\pm$ 0.5 & 0.8 $\pm$ 0.5 & 169.0 $\pm$ 19.8 \\
+Fixed 2.0 & 5 & 69.1 $\pm$ 0.7 & 68.0 $\pm$ 0.5 & 1.1 $\pm$ 0.4 & 167.2 $\pm$ 31.1 \\
+AEES & 5 & 72.1 $\pm$ 0.2 & 69.0 $\pm$ 3.4 & 3.1 $\pm$ 3.6 & 124.0 $\pm$ 30.4 \\
+AdamW + Cosine & 5 & \emph{72.8 $\pm$ 0.3} & 72.5 $\pm$ 0.2 & 0.2 $\pm$ 0.1 & 190.4 $\pm$ 7.7 \\
+AEES + Cosine & 5 & 72.8 $\pm$ 0.3 & \emph{72.7 $\pm$ 0.3} & \textbf{0.1 $\pm$ 0.1} & 186.8 $\pm$ 11.5 \\
+AdamW + Linear & 5 & 72.6 $\pm$ 0.2 & 72.4 $\pm$ 0.3 & \emph{0.1 $\pm$ 0.1} & 196.4 $\pm$ 4.8 \\
+AEES + Linear & 5 & \textbf{72.9 $\pm$ 0.3} & \textbf{72.7 $\pm$ 0.4} & 0.2 $\pm$ 0.1 & 190.0 $\pm$ 10.9 \\
+\bottomrule
+\end{tabular}
+\caption{Compact clean CIFAR-100 table including main methods and fixed LR multiplier ablations. Fixed multipliers use the same LR multiplier values available to AEES.}
+\label{tab:cifar_clean_compact_appendix}
+\end{table}

@@ -822,16 +822,16 @@ def main() -> None:
         "paths",
         nargs="*",
         default=[
-            "results/clean_agnews",
-            "results/noisy_agnews",
-            "results/sst2",
+            "archived_results/clean_agnews",
+            "archived_results/noisy_agnews",
+            "archived_results/sst2",
         ],
         help="Result folders/files to scan.",
     )
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("results/tables/nlp_tables"),
+        default=Path("reproduced_artifacts/tables/nlp_tables"),
         help="Output directory for .tex and .csv tables.",
     )
     args = parser.parse_args()

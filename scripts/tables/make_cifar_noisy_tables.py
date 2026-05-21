@@ -11,8 +11,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from typing import Dict, List, Optional, Tuple
 
-RESULTS_ROOT = Path("results/cifar_noisy")
-OUTPUT_DIR = Path("results/tables/cifar_noisy")
+RESULTS_ROOT = Path("archived_results/cifar_noisy")
+OUTPUT_DIR = Path("reproduced_artifacts/tables/cifar_noisy")
 
 TASK_ORDER = ["asym20", "sym20", "sym40"]
 TASK_TITLES = {

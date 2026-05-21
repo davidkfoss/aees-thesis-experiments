@@ -1,0 +1,17 @@
+setting_label,optimizer_label,variant_label,n,selected_epoch,val_acc,corr_noisy,corr_clean,train_clean
+Asym. 20\%,\adamw{},Baseline,5,17.4 $\pm$ 1.5,58.4 $\pm$ 0.4,37.0 $\pm$ 5.8,45.8 $\pm$ 3.6,80.9 $\pm$ 2.5
+Asym. 20\%,\adamw{},\method{},5,17.8 $\pm$ 2.5,61.7 $\pm$ 0.7,29.0 $\pm$ 8.6,53.8 $\pm$ 5.1,81.1 $\pm$ 4.1
+Asym. 20\%,\adamw{},Cosine,5,187.0 $\pm$ 10.3,60.3 $\pm$ 0.6,100.0 $\pm$ 0.0,0.0 $\pm$ 0.0,100.0 $\pm$ 0.0
+Asym. 20\%,\adamw{},Cosine + \method{},5,18.8 $\pm$ 3.1,62.2 $\pm$ 0.8,24.6 $\pm$ 7.7,57.3 $\pm$ 4.5,80.7 $\pm$ 3.8
+Asym. 20\%,\sgdm{},Baseline,5,20.2 $\pm$ 3.6,57.3 $\pm$ 0.9,29.3 $\pm$ 7.7,49.1 $\pm$ 5.0,76.0 $\pm$ 3.4
+Asym. 20\%,\sgdm{},\method{},5,22.8 $\pm$ 4.6,62.5 $\pm$ 0.3,27.1 $\pm$ 5.7,55.7 $\pm$ 3.3,81.3 $\pm$ 2.8
+Asym. 20\%,\sgdm{},Cosine,5,190.0 $\pm$ 7.3,62.9 $\pm$ 0.7,99.9 $\pm$ 0.0,0.0 $\pm$ 0.0,100.0 $\pm$ 0.0
+Asym. 20\%,\sgdm{},Cosine + \method{},5,89.2 $\pm$ 92.5,62.3 $\pm$ 0.5,60.8 $\pm$ 36.1,31.4 $\pm$ 28.8,91.7 $\pm$ 7.7
+Sym. 40\%,\adamw{},Baseline,5,15.8 $\pm$ 1.5,51.7 $\pm$ 0.6,3.6 $\pm$ 1.7,48.4 $\pm$ 1.3,70.0 $\pm$ 3.8
+Sym. 40\%,\adamw{},\method{},5,18.0 $\pm$ 1.6,55.0 $\pm$ 1.1,3.1 $\pm$ 1.1,52.8 $\pm$ 0.9,73.4 $\pm$ 3.6
+Sym. 40\%,\adamw{},Cosine,5,16.0 $\pm$ 0.7,54.1 $\pm$ 0.7,1.9 $\pm$ 0.2,53.0 $\pm$ 0.5,69.5 $\pm$ 1.7
+Sym. 40\%,\adamw{},Cosine + \method{},5,18.6 $\pm$ 1.5,54.5 $\pm$ 0.5,1.9 $\pm$ 0.4,53.5 $\pm$ 0.7,69.7 $\pm$ 1.4
+Sym. 40\%,\sgdm{},Baseline,5,20.4 $\pm$ 1.5,50.1 $\pm$ 0.8,2.9 $\pm$ 0.9,46.8 $\pm$ 1.4,67.0 $\pm$ 1.8
+Sym. 40\%,\sgdm{},\method{},5,25.0 $\pm$ 2.5,55.6 $\pm$ 1.0,3.9 $\pm$ 1.7,52.0 $\pm$ 1.7,76.2 $\pm$ 3.3
+Sym. 40\%,\sgdm{},Cosine,5,18.6 $\pm$ 1.5,54.0 $\pm$ 1.6,2.7 $\pm$ 0.6,52.3 $\pm$ 1.5,72.0 $\pm$ 4.0
+Sym. 40\%,\sgdm{},Cosine + \method{},5,25.6 $\pm$ 1.9,54.3 $\pm$ 1.1,7.2 $\pm$ 5.4,49.7 $\pm$ 4.2,80.3 $\pm$ 4.3

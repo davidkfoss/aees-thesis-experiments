@@ -1,0 +1,15 @@
+runs-root: /Users/davidfoss/aees-thesis-experiments/results/cifar_noisy
+
+Per-cell seed counts and statistics:
+  AdamW / flat         (Flat): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=16.00 peak_acc_mean=51.68% final_acc_mean=38.06%
+  AdamW / cosine       (Cosine): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=16.00 peak_acc_mean=51.72% final_acc_mean=42.22%
+  AdamW / aees_lr      (AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=18.00 peak_acc_mean=55.02% final_acc_mean=39.91%
+  AdamW / cosine_aees  (Cosine + AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=19.00 peak_acc_mean=54.72% final_acc_mean=42.52%
+  SGD+M / flat         (Flat): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=20.00 peak_acc_mean=50.07% final_acc_mean=33.79%
+  SGD+M / cosine       (Cosine): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=19.00 peak_acc_mean=50.11% final_acc_mean=46.87%
+  SGD+M / aees_lr      (AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=25.00 peak_acc_mean=55.63% final_acc_mean=39.67%
+  SGD+M / cosine_aees  (Cosine + AEES): n=5 seeds=[0, 1, 2, 3, 4] peak_epoch_mean=26.00 peak_acc_mean=56.00% final_acc_mean=46.29%
+
+outputs:
+  - results/plots/cifar/cifar_symmetric40_curves.pdf
+  - results/plots/cifar/cifar_symmetric40_curves.png

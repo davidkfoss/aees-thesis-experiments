@@ -11,8 +11,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from typing import Dict, List, Optional
 
-RESULTS_ROOT = Path("results/cifar_clean")
-OUTPUT_DIR = Path("results/tables/cifar_clean")
+RESULTS_ROOT = Path("archived_results/cifar_clean")
+OUTPUT_DIR = Path("reproduced_artifacts/tables/cifar_clean")
 
 FILE_RE = re.compile(r"^cifar_clean_(.+)_seed(\d+)\.json$")
 

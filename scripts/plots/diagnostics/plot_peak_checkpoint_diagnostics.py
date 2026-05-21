@@ -1,39 +1,47 @@
-"""Peak-checkpoint memorization diagnostics on noisy \\cifar{} (§5.3.4).
+"""Peak-checkpoint memorization diagnostics on noisy CIFAR-100.
 
-Scatters the corrupted-subset accuracies at the peak validation checkpoint,
-computed directly from the rerun JSONs under ``results/checkpointing/``. The
-rerun files stop at the peak-validation checkpoint, so each file's *final*
+Scatters the corrupted-subset accuracies at the peak-validation checkpoint,
+computed directly from the rerun JSONs under ``archived_results/checkpointing``.
+The rerun files stop at the peak-validation checkpoint, so each file's final
 diagnostics are the peak-checkpoint diagnostics. Loading and aggregation are
-delegated to ``scripts.tables.make_checkpointing_tables`` (the source of truth
-for Table 5.6), so this figure and that table can never drift apart.
+delegated to ``scripts.tables.make_checkpointing_tables``, the source of truth
+for the corresponding checkpoint-diagnostics table, so this figure and that
+table use the same aggregated values.
 
-The two axes are the two corrupted-subset diagnostics:
+The two axes are the corrupted-subset diagnostics:
 
-    x-axis: Corr. vs noisy (accuracy of the model against the corrupted
-            training label). Lower is better — high values indicate the
-            model has memorized the corrupted targets.
-    y-axis: Corr. vs clean (accuracy against the original clean label).
-            Higher is better — high values indicate the model preserves the
-            underlying clean-label structure on examples that were corrupted.
+    x-axis: Corr. vs noisy, the accuracy on corrupted training examples against
+            their corrupted labels. Lower values indicate less prediction of
+            the imposed noisy targets.
+    y-axis: Corr. vs clean, the accuracy on the same corrupted examples against
+            their original clean labels. Higher values indicate better
+            preservation of the underlying clean-label structure.
 
-A method that finds a useful checkpoint *before* memorizing the corrupted
-labels sits in the upper-left of each panel (low Corr. vs noisy, high
-Corr. vs clean). A method whose peak coincides with full memorization sits
-in the lower-right (Corr. vs noisy near 100%, Corr. vs clean near 0%).
+A method that finds a useful checkpoint before memorizing the corrupted labels
+sits toward the upper-left of each panel: low Corr. vs noisy and high Corr. vs
+clean. A method whose peak coincides with full corrupted-label fitting sits
+toward the lower-right: Corr. vs noisy near 100% and Corr. vs clean near 0%.
 
 Two panels:
-    Asym. 20% — structured corruption; Cosine reaches its peak validation
-                checkpoint late, after the model has fully fit the
-                corrupted labels. AEES variants reach peaks early and
-                preserve substantial clean-label accuracy.
-    Sym. 40%  — random corruption; the model cannot fit the corrupted
-                labels through any compact mapping, so Corr. vs noisy
-                stays low for every method. The Corr. vs clean column is
-                the more informative axis here.
+    Asym. 20% — structured corruption; Cosine reaches its peak-validation
+                checkpoint late, after the model has fully fit the corrupted
+                labels. AEES variants reach peaks earlier and preserve
+                substantial clean-label accuracy.
+    Sym. 40%  — random corruption; corrupted-label accuracy remains low for
+                every method, so Corr. vs clean is the more informative axis.
 
-CLI:
-    python -m scripts.plots.diagnostics.plot_peak_checkpoint_diagnostics \\
-        --runs-root results/checkpointing --out-dir results/plots/diagnostics
+Typical reproduction command:
+    uv run python -m scripts.plots.diagnostics.plot_peak_checkpoint_diagnostics \\
+        --runs-root archived_results/checkpointing \\
+        --out-dir reproduced_artifacts/figures/diagnostics
+
+Outputs on success:
+    <out-dir>/peak_checkpoint_diagnostics.pdf
+    <out-dir>/peak_checkpoint_diagnostics.png
+    <out-dir>/peak_checkpoint_diagnostics.summary.txt
+
+On failure:
+    <out-dir>/peak_checkpoint_diagnostics.MISSING.md
 """
 
 from __future__ import annotations
@@ -143,7 +151,8 @@ def _load_points(runs_root: pathlib.Path) -> list[Point]:
             for variant in EXPECTED_VARIANTS:
                 cell = cells.get((setting, optimizer, variant))
                 if cell is None:
-                    problems.append(f"absent cell: {setting}/{optimizer}/{variant}")
+                    problems.append(
+                        f"absent cell: {setting}/{optimizer}/{variant}")
                 elif cell["n"] < 2:
                     problems.append(
                         f"cell {setting}/{optimizer}/{variant} has only "
@@ -205,8 +214,10 @@ def _build_figure(points: list[Point]):
     # on Corr. noisy, which produces error bars that span most of the panel and
     # obscure the clean Cosine-vs-AEES contrast. The SGD+M numbers are still
     # reported in the .summary.txt for reference.
-    asym20_pts = [p for p in points if p.setting == "asym20" and p.optimizer == "AdamW"]
-    sym40_pts = [p for p in points if p.setting == "sym40" and p.optimizer == "AdamW"]
+    asym20_pts = [p for p in points if p.setting ==
+                  "asym20" and p.optimizer == "AdamW"]
+    sym40_pts = [p for p in points if p.setting ==
+                 "sym40" and p.optimizer == "AdamW"]
 
     # Asym 20%: widely spread (Cosine at 100,0 vs AEES at ~25,55).
     # Full 0–100 range on both axes is needed to show the contrast.

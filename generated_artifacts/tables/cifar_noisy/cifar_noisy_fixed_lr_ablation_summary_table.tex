@@ -1,0 +1,24 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccc}
+\toprule
+\multirow{2}{*}{Noise} & \multirow{2}{*}{Optimizer} & \multirow{2}{*}{Best fixed} & \multicolumn{4}{c}{Validation best / final / drop (pp)} \\
+& & & Best fixed & AEES & Cosine & Cosine + AEES \\
+\midrule
+Asym. 20\% & AdamW & $\times$1.0 & 58.4 / 56.2 / 2.2 & 61.7 / 58.0 / 3.7 & 60.2 / 60.0 / 0.2 & 62.1 / 59.8 / 2.3 \\
+ & SGD & $\times$0.5 & 57.5 / 53.3 / 4.2 & 62.5 / 58.4 / 4.2 & 63.3 / 63.1 / 0.2 & 62.7 / 62.5 / 0.2 \\
+\midrule
+Sym. 20\% & AdamW & $\times$0.5 & 58.8 / 54.4 / 4.4 & 62.2 / 55.6 / 6.6 & 58.6 / 58.0 / 0.6 & 62.0 / 58.4 / 3.6 \\
+ & SGD & $\times$0.5 & 57.4 / 50.6 / 6.8 & 62.5 / 56.4 / 6.1 & 62.2 / 62.0 / 0.2 & 63.1 / 61.4 / 1.6 \\
+\midrule
+Sym. 40\% & AdamW & $\times$0.5 & 52.5 / 39.0 / 13.5 & 55.0 / 39.9 / 15.1 & 51.7 / 42.2 / 9.5 & 54.7 / 42.5 / 12.2 \\
+ & SGD & $\times$0.5 & 50.8 / 34.9 / 16.0 & 55.6 / 39.7 / 16.0 & 50.1 / 46.9 / 3.2 & 56.0 / 46.3 / 9.7 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Fixed learning-rate multiplier ablation summary for noisy \cifar{}. For each noise setting and optimizer, the table reports the best fixed multiplier according to peak validation accuracy, using the same multiplier set available to the AEES controller. Validation entries are reported as best / final / drop, where drop is the best-to-final validation decrease in percentage points. This table tests whether the AEES peak gains under label noise exceed the best static LR rescaling baseline.}
+\label{tab:cifar_noisy_fixed_lr_ablation_summary}
+\end{table}

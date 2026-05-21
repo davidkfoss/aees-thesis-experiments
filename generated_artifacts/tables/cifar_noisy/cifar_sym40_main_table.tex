@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\multirow{2}{*}{Optimizer} & \multirow{2}{*}{Method} & \multicolumn{4}{c}{Validation} \\
+& & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+\multirow{4}{*}{AdamW} & Baseline & 51.7 $\pm$ 0.6 & 38.1 $\pm$ 0.1 & 13.6 $\pm$ 0.6 & 15.8 $\pm$ 1.5 \\
+ & AEES & \textbf{55.0 $\pm$ 1.1} & 39.9 $\pm$ 1.2 & 15.1 $\pm$ 1.7 & 18.0 $\pm$ 1.6 \\
+ & Cosine & 51.7 $\pm$ 0.8 & \emph{42.2 $\pm$ 0.5} & \textbf{9.5 $\pm$ 1.1} & 16.0 $\pm$ 0.7 \\
+ & Cosine + AEES & \emph{54.7 $\pm$ 0.8} & \textbf{42.5 $\pm$ 1.4} & \emph{12.2 $\pm$ 1.1} & 18.6 $\pm$ 1.5 \\
+\midrule
+\multirow{4}{*}{SGD} & Baseline & 50.1 $\pm$ 0.8 & 33.8 $\pm$ 1.2 & 16.3 $\pm$ 1.1 & 20.4 $\pm$ 1.5 \\
+ & AEES & \emph{55.6 $\pm$ 1.0} & 39.7 $\pm$ 3.8 & 16.0 $\pm$ 4.0 & 25.0 $\pm$ 2.5 \\
+ & Cosine & 50.1 $\pm$ 1.1 & \textbf{46.9 $\pm$ 0.8} & \textbf{3.2 $\pm$ 1.0} & 18.6 $\pm$ 1.5 \\
+ & Cosine + AEES & \textbf{56.0 $\pm$ 0.9} & \emph{46.3 $\pm$ 0.6} & \emph{9.7 $\pm$ 0.5} & 25.6 $\pm$ 1.9 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Noisy-label CIFAR-100 results under 40\% symmetric label noise. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better. Within each optimizer block, bold and italics mark the best and second-best values, respectively.}}
+\label{tab:cifar_sym40_main}
+\end{table}

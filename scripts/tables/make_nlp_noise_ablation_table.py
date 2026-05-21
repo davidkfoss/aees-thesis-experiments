@@ -7,9 +7,9 @@ aggregates best and final validation accuracies (mean ± sample std) across
 make_nlp_latex_tables.py (bold best, italic second-best, drop in pp).
 
 CLI:
-    python scripts/tables/make_nlp_noise_ablation_table.py \\
-        --runs-root results \\
-        --out results/tables/nlp_noise_ablation_table.tex
+    uv run python scripts/tables/make_nlp_noise_ablation_table.py \\
+        --runs-root archived_results \\
+        --out reproduced_artifacts/tables/nlp_noise_ablation_table.tex
 """
 
 from __future__ import annotations
@@ -88,11 +88,13 @@ CONDITIONS: list[Condition] = [
     ),
     Condition(
         "random_sigma", "Random $\\sigma$ + WL",
-        _predicate("RandomScheduler", "warmup_linear", [1.0], [0.0, 0.005, 0.01]),
+        _predicate("RandomScheduler", "warmup_linear",
+                   [1.0], [0.0, 0.005, 0.01]),
     ),
     Condition(
         "aees_noise_wl", "AEES-Noise + WL",
-        _predicate("AdaptiveScheduler", "warmup_linear", [1.0], [0.0, 0.005, 0.01]),
+        _predicate("AdaptiveScheduler", "warmup_linear",
+                   [1.0], [0.0, 0.005, 0.01]),
     ),
     Condition(
         "aees_dual_wl", "AEES-Dual + WL",
@@ -163,7 +165,8 @@ class CellStats:
 
 
 def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
-    buckets: dict[str, dict[int, dict[str, float]]] = {c.key: {} for c in CONDITIONS}
+    buckets: dict[str, dict[int, dict[str, float]]] = {
+        c.key: {} for c in CONDITIONS}
     for path, record in _walk_runs(runs_root):
         for cond in CONDITIONS:
             if cond.predicate(record, path):
@@ -177,7 +180,8 @@ def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
                 final = float(record["final_val_accuracy"])
                 vals = record.get("val_accuracies") or []
                 if vals:
-                    peak_epoch = int(max(range(len(vals)), key=lambda i: vals[i])) + 1
+                    peak_epoch = int(
+                        max(range(len(vals)), key=lambda i: vals[i])) + 1
                 else:
                     peak_epoch = -1
                 buckets[cond.key][seed] = {
@@ -192,7 +196,8 @@ def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
     for cond in CONDITIONS:
         per_seed = buckets[cond.key]
         if not per_seed:
-            raise SystemExit(f"No runs matched condition: {cond.key} ({cond.label})")
+            raise SystemExit(
+                f"No runs matched condition: {cond.key} ({cond.label})")
         seeds = sorted(per_seed.keys())
         out[cond.key] = CellStats(
             cond=cond,
@@ -212,7 +217,8 @@ def _collect(runs_root: pathlib.Path) -> dict[str, CellStats]:
 
 def _rank(values: dict[str, float], higher_is_better: bool) -> dict[str, str]:
     """Returns {cond_key: style} where style is "best", "second", or ""."""
-    ordered = sorted(values.items(), key=lambda kv: kv[1], reverse=higher_is_better)
+    ordered = sorted(
+        values.items(), key=lambda kv: kv[1], reverse=higher_is_better)
     style = {k: "" for k in values}
     if len(ordered) >= 1:
         style[ordered[0][0]] = "best"
@@ -234,9 +240,12 @@ def _styled(text: str, style: str) -> str:
 
 
 def _build_table(cells: dict[str, CellStats]) -> str:
-    best_rank = _rank({k: c.best_mean for k, c in cells.items()}, higher_is_better=True)
-    final_rank = _rank({k: c.final_mean for k, c in cells.items()}, higher_is_better=True)
-    drop_rank = _rank({k: c.drop_mean for k, c in cells.items()}, higher_is_better=False)
+    best_rank = _rank(
+        {k: c.best_mean for k, c in cells.items()}, higher_is_better=True)
+    final_rank = _rank(
+        {k: c.final_mean for k, c in cells.items()}, higher_is_better=True)
+    drop_rank = _rank(
+        {k: c.drop_mean for k, c in cells.items()}, higher_is_better=False)
 
     lines: list[str] = []
     lines.append(r"\begin{table}[t]")
@@ -267,9 +276,12 @@ def _build_table(cells: dict[str, CellStats]) -> str:
         if idx == n_baselines:
             lines.append(r"\midrule")
         c = cells[cond.key]
-        best_cell = _styled(_fmt_pm(c.best_mean, c.best_std), best_rank[cond.key])
-        final_cell = _styled(_fmt_pm(c.final_mean, c.final_std), final_rank[cond.key])
-        drop_cell = _styled(_fmt_pm(c.drop_mean, c.drop_std), drop_rank[cond.key])
+        best_cell = _styled(
+            _fmt_pm(c.best_mean, c.best_std), best_rank[cond.key])
+        final_cell = _styled(
+            _fmt_pm(c.final_mean, c.final_std), final_rank[cond.key])
+        drop_cell = _styled(
+            _fmt_pm(c.drop_mean, c.drop_std), drop_rank[cond.key])
 
         peak_cell = _fmt_pm(c.peak_epoch_mean, c.peak_epoch_std)
         lines.append(
@@ -286,12 +298,13 @@ def _build_table(cells: dict[str, CellStats]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--runs-root", type=pathlib.Path, default=pathlib.Path("results"),
+        "--runs-root", type=pathlib.Path, default=pathlib.Path("archived_results"),
         help="Parent directory to walk recursively for noisy AG News runs.",
     )
     parser.add_argument(
         "--out", type=pathlib.Path,
-        default=pathlib.Path("results/tables/nlp_noise_ablation_table.tex"),
+        default=pathlib.Path(
+            "reproduced_artifacts/tables/nlp_noise_ablation_table.tex"),
         help="Output .tex path.",
     )
     args = parser.parse_args()

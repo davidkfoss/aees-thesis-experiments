@@ -14,9 +14,9 @@ rolling-mean line per method (Flat, Cosine, AEES, Cosine + AEES) with a
 ±1 SD band across seeds, plus peak/final markers with white halo.
 
 CLI:
-    python -m scripts.plots.cifar.plot_cifar_noisy_curves \\
-        --runs-root results/cifar_noisy \\
-        --out-dir results/plots/cifar \\
+    uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves \\
+        --runs-root archived_results/cifar_noisy \\
+        --out-dir reproduced_artifacts/figures/cifar \\
         --noise-setting asym20
 """
 

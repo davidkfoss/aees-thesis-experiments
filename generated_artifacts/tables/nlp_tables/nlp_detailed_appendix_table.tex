@@ -1,0 +1,34 @@
+\begin{table}[htbp]
+\centering
+\caption{Detailed NLP fine-tuning results for SST-2, clean AG News, and AG News with 20\% symmetric training-label noise. The table reports the number of seeds $n$, validation metrics, best-to-final validation drop in percentage points, peak epoch, episode length, and the LR/noise candidate axes used by each configuration. All configurations use AdamW as the base optimizer. WL denotes warmup-linear learning-rate scheduling.}
+\label{tab:nlp_detailed_appendix}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccl}
+\toprule
+Task & Method & $n$ & Best & Final & Drop & Peak epoch & Episode length & Axes \\
+& & & (\%) & (\%) & (pp) & & & \\
+\midrule
+SST-2 & AdamW & 5 & 89.56 $\pm$ 0.44 & 88.00 $\pm$ 0.59 & 1.56 $\pm$ 0.80 & 2.00 $\pm$ 1.41 & 100 & LR: 1; noise: 0 \\
+ & AdamW + WL & 5 & 90.48 $\pm$ 0.27 & 89.84 $\pm$ 0.35 & 0.64 $\pm$ 0.40 & 2.20 $\pm$ 0.84 & 100 & LR: 1; noise: 0 \\
+ & AEES-Dual & 5 & 91.03 $\pm$ 0.55 & 90.25 $\pm$ 1.03 & 0.78 $\pm$ 0.61 & 2.00 $\pm$ 1.22 & 200 & LR: 0.7, 1, 1.3; noise: 0, 0.0025, 0.005 \\
+ & AEES-LR + WL & 5 & 90.55 $\pm$ 0.35 & 90.21 $\pm$ 0.41 & 0.34 $\pm$ 0.18 & 2.60 $\pm$ 1.52 & 200 & LR: 0.7, 1, 1.3; noise: 0 \\
+ & AEES-Noise + WL & 5 & 91.12 $\pm$ 0.38 & 90.57 $\pm$ 0.29 & 0.55 $\pm$ 0.42 & 3.20 $\pm$ 1.30 & 200 & LR: 1; noise: 0, 0.0025, 0.005 \\
+ & AEES-Dual + WL & 5 & 90.80 $\pm$ 0.35 & 90.44 $\pm$ 0.42 & 0.37 $\pm$ 0.38 & 3.00 $\pm$ 1.41 & 200 & LR: 0.7, 1, 1.3; noise: 0, 0.0025, 0.005 \\
+\midrule
+AG News & AdamW & 5 & 93.98 $\pm$ 0.15 & 93.52 $\pm$ 0.25 & 0.46 $\pm$ 0.31 & 2.00 $\pm$ 0.71 & 100 & LR: 1; noise: 0 \\
+ & AdamW + WL & 5 & 94.44 $\pm$ 0.09 & 94.36 $\pm$ 0.16 & 0.09 $\pm$ 0.13 & 4.40 $\pm$ 0.55 & 100 & LR: 1; noise: 0 \\
+ & AEES-Dual & 5 & 94.40 $\pm$ 0.14 & 94.12 $\pm$ 0.27 & 0.28 $\pm$ 0.27 & 4.20 $\pm$ 0.84 & 200 & LR: 0.7, 1, 1.3; noise: 0, 0.0025, 0.005 \\
+ & AEES-Dual + WL & 5 & 94.38 $\pm$ 0.05 & 94.34 $\pm$ 0.10 & 0.04 $\pm$ 0.08 & 4.20 $\pm$ 1.10 & 200 & LR: 0.7, 1, 1.3; noise: 0, 0.0025, 0.005 \\
+\midrule
+AG News 20\% & AdamW & 5 & 92.72 $\pm$ 0.22 & 90.12 $\pm$ 0.57 & 2.59 $\pm$ 0.69 & 1.80 $\pm$ 0.84 & 100 & LR: 1; noise: 0 \\
+ & AdamW + WL & 5 & 93.19 $\pm$ 0.19 & 90.79 $\pm$ 0.17 & 2.40 $\pm$ 0.28 & 2.00 $\pm$ 0.00 & 100 & LR: 1; noise: 0 \\
+ & AEES-Dual & 5 & 93.32 $\pm$ 0.12 & 92.85 $\pm$ 0.55 & 0.47 $\pm$ 0.56 & 4.40 $\pm$ 0.55 & 200 & LR: 0.5, 1, 2; noise: 0, 0.005, 0.01 \\
+ & AEES-LR + WL & 5 & 92.72 $\pm$ 0.20 & 91.53 $\pm$ 0.12 & 1.19 $\pm$ 0.25 & 2.60 $\pm$ 0.55 & 200 & LR: 0.5, 1, 2; noise: 0 \\
+ & AEES-Noise + WL & 5 & 93.47 $\pm$ 0.09 & 93.45 $\pm$ 0.10 & 0.01 $\pm$ 0.02 & 4.60 $\pm$ 0.89 & 200 & LR: 1; noise: 0, 0.005, 0.01 \\
+ & AEES-Dual + WL & 5 & 93.55 $\pm$ 0.07 & 93.51 $\pm$ 0.09 & 0.05 $\pm$ 0.07 & 4.60 $\pm$ 0.55 & 200 & LR: 0.5, 1, 2; noise: 0, 0.005, 0.01 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

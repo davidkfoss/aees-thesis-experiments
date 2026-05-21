@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{Axis-ablation results for AG News under 20\% symmetric training-label noise. All configurations use AdamW with warmup-linear scheduling as the base setup. \method{}-LR adapts only the learning-rate multiplier, \method{}-Noise adapts only gradient-noise magnitude, and \method{}-Dual adapts both axes. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better. Bold and italics mark the best and second-best values in the table, respectively.}}
+\label{tab:agnews-noise20-axis}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccc}
+\toprule
+Method & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+AdamW + warmup-linear & 93.19 $\pm$ 0.19 & 90.79 $\pm$ 0.17 & 2.40 $\pm$ 0.28 & 2.00 $\pm$ 0.00 \\
+AEES-LR + warmup-linear & 92.72 $\pm$ 0.20 & 91.53 $\pm$ 0.12 & 1.19 $\pm$ 0.25 & 2.60 $\pm$ 0.55 \\
+AEES-Noise + warmup-linear & \emph{93.47 $\pm$ 0.09} & \emph{93.45 $\pm$ 0.10} & \textbf{0.01 $\pm$ 0.02} & 4.60 $\pm$ 0.89 \\
+AEES-Dual + warmup-linear & \textbf{93.55 $\pm$ 0.07} & \textbf{93.51 $\pm$ 0.09} & \emph{0.05 $\pm$ 0.07} & 4.60 $\pm$ 0.55 \\
+\bottomrule
+\end{tabular}
+\end{table}

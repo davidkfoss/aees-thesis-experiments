@@ -11,8 +11,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from typing import Dict, List, Optional, Tuple
 
-RESULTS_ROOT = Path("results/trend_context_ablation")
-OUTPUT_DIR = Path("results/tables/ablations")
+RESULTS_ROOT = Path("archived_results/trend_context_ablation")
+OUTPUT_DIR = Path("reproduced_artifacts/tables/ablations")
 
 SETTING_ORDER = ["cifar_clean", "cifar_noisy", "sst2"]
 SETTING_LABELS = {

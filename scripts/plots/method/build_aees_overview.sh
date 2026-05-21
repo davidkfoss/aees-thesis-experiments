@@ -5,10 +5,19 @@
 # PDF to the figure's ink bounding box via ghostscript, then renders a
 # high-resolution PNG companion via ImageMagick.
 #
-# Outputs (in results/plots/method/):
-#   - aees_overview.pdf            (vector, tightly cropped, for thesis)
-#   - aees_overview.png            (raster, 220 dpi, for previews)
-#   - aees_overview.summary.txt    (label inventory, for QA)
+# Typical reproduction command:
+#   bash scripts/plots/method/build_aees_overview.sh
+#
+# Optional:
+#   bash scripts/plots/method/build_aees_overview.sh reproduced_artifacts/figures/method
+#
+# Outputs:
+#   <out-dir>/aees_overview.pdf
+#   <out-dir>/aees_overview.png
+#   <out-dir>/aees_overview.summary.txt
+#
+# Default output directory:
+#   reproduced_artifacts/figures/method
 #
 # Requires: pdflatex (TeX Live), gs, magick (ImageMagick 7).
 set -euo pipefail
@@ -16,13 +25,16 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
 SRC="$HERE/aees_overview.tex"
-OUT="$REPO/results/plots/method"
+
+OUT_REL="${1:-reproduced_artifacts/figures/method}"
+OUT="$REPO/$OUT_REL"
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 mkdir -p "$OUT"
 
-# 1. Compile (run twice to settle any internal references; cheap).
+# 1. Compile twice to settle any internal references.
 pdflatex -interaction=nonstopmode -halt-on-error \
     -output-directory "$TMP" "$SRC" >/dev/null
 pdflatex -interaction=nonstopmode -halt-on-error \
@@ -42,19 +54,20 @@ OX=$(python3 -c "print($PAD - $X1)")
 OY=$(python3 -c "print($PAD - $Y1)")
 
 gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -o "$OUT/aees_overview.pdf" \
-   -dDEVICEWIDTHPOINTS=$W -dDEVICEHEIGHTPOINTS=$H -dFIXEDMEDIA \
+   -dDEVICEWIDTHPOINTS="$W" -dDEVICEHEIGHTPOINTS="$H" -dFIXEDMEDIA \
    -c "<</PageOffset [$OX $OY]>> setpagedevice" \
    -f "$TMP/aees_overview.pdf"
 
-# 3. Render PNG companion (220 dpi, alpha-flattened to white).
+# 3. Render PNG companion at 220 dpi, alpha-flattened to white.
 magick -density 220 "$OUT/aees_overview.pdf" \
        -background white -alpha remove -alpha off \
        "$OUT/aees_overview.png"
 
-# 4. Refresh summary (label inventory matches the figure spec).
-cat >"$OUT/aees_overview.summary.txt" <<'EOF'
+# 4. Refresh summary.
+cat >"$OUT/aees_overview.summary.txt" <<EOF
 schematic - no input data
 source: scripts/plots/method/aees_overview.tex (TikZ)
+output_dir: $OUT_REL
 labels rendered:
   - Mini-batch
   - Forward / backward
@@ -63,10 +76,10 @@ labels rendered:
   - Episodic Bandit Controller (LR-multiplier)
   - Episodic Bandit Controller (Gradient noise)
   - Selected arm values
-  - Reward $r_e$ from EMA loss
+  - Reward \$r_e\$ from EMA loss
 outputs:
-  - results/plots/method/aees_overview.pdf
-  - results/plots/method/aees_overview.png
+  - $OUT_REL/aees_overview.pdf
+  - $OUT_REL/aees_overview.png
 EOF
 
 echo "wrote $OUT/aees_overview.pdf"

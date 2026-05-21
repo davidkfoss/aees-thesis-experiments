@@ -1,0 +1,27 @@
+\begin{table}[t]
+\centering
+\caption[Trend-context controller ablation]{
+Trend-context controller ablation. The context-conditioned variant uses coarse improving, stable, and worsening trend buckets derived from recent episode-end training losses. Values are reported as mean $\pm$ standard deviation across seeds. Differences are computed as trend context minus context-free.
+}
+\label{tab:trend-context-ablation}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccc}
+\toprule
+\multirow{2}{*}{Setting} &
+\multicolumn{3}{c}{Context-free} &
+\multicolumn{3}{c}{Trend context} &
+\multicolumn{3}{c}{Difference} \\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+\cmidrule(lr){8-10}
+& $\accbest$ & $\accfinal$ & $\dropmetric$ & $\accbest$ & $\accfinal$ & $\dropmetric$ & $\Delta\accbest$ & $\Delta\accfinal$ & $\Delta\dropmetric$ \\
+\midrule
+Clean \cifar{} & 72.1 $\pm$ 0.2 & 69.0 $\pm$ 3.4 & 3.1 $\pm$ 3.6 & 71.8 $\pm$ 0.7 & 70.5 $\pm$ 2.4 & 1.3 $\pm$ 1.8 & -0.3 & +1.5 & -1.8 \\
+Sym. 20\% \cifar{} & 62.2 $\pm$ 0.9 & 55.6 $\pm$ 0.6 & 6.6 $\pm$ 0.7 & 61.3 $\pm$ 1.6 & 55.2 $\pm$ 0.7 & 6.1 $\pm$ 1.1 & -0.9 & -0.4 & -0.5 \\
+\sst{} & 91.1 $\pm$ 0.5 & 90.1 $\pm$ 0.5 & 0.9 $\pm$ 0.7 & 91.0 $\pm$ 0.5 & 90.3 $\pm$ 1.0 & 0.8 $\pm$ 0.6 & -0.0 & +0.1 & -0.1 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

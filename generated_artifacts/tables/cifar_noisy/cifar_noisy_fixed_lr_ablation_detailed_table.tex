@@ -1,0 +1,59 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllccccc}
+\toprule
+Noise & Optimizer & Method & $n$ & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+Asym. 20\% & AdamW & Baseline & 5 & 58.4 $\pm$ 0.4 & 56.2 $\pm$ 0.8 & 2.2 $\pm$ 1.0 & 17.4 $\pm$ 1.5 \\
+ &  & Fixed 0.5 & 5 & 57.9 $\pm$ 0.4 & 56.5 $\pm$ 0.6 & 1.5 $\pm$ 0.5 & 18.0 $\pm$ 1.2 \\
+ &  & Fixed 1.0 & 5 & 58.4 $\pm$ 0.4 & 56.2 $\pm$ 0.8 & 2.2 $\pm$ 1.0 & 17.4 $\pm$ 1.5 \\
+ &  & Fixed 2.0 & 5 & 56.1 $\pm$ 0.7 & 54.7 $\pm$ 0.7 & 1.4 $\pm$ 0.5 & 81.8 $\pm$ 93.8 \\
+ &  & AEES & 5 & 61.7 $\pm$ 0.7 & 58.0 $\pm$ 0.9 & 3.7 $\pm$ 0.4 & 17.8 $\pm$ 2.5 \\
+ &  & Cosine & 5 & 60.2 $\pm$ 0.6 & 60.0 $\pm$ 0.7 & 0.2 $\pm$ 0.1 & 187.0 $\pm$ 10.3 \\
+ &  & Cosine + AEES & 5 & 62.1 $\pm$ 0.6 & 59.8 $\pm$ 0.3 & 2.3 $\pm$ 0.7 & 18.8 $\pm$ 3.1 \\
+ & SGD & Baseline & 5 & 57.3 $\pm$ 0.9 & 51.9 $\pm$ 1.6 & 5.3 $\pm$ 1.3 & 20.2 $\pm$ 3.6 \\
+ &  & Fixed 0.5 & 5 & 57.5 $\pm$ 0.6 & 53.3 $\pm$ 0.7 & 4.2 $\pm$ 0.8 & 20.4 $\pm$ 3.8 \\
+ &  & Fixed 1.0 & 5 & 57.3 $\pm$ 0.9 & 51.9 $\pm$ 1.6 & 5.3 $\pm$ 1.3 & 20.2 $\pm$ 3.6 \\
+ &  & Fixed 2.0 & 5 & 55.6 $\pm$ 0.6 & 51.4 $\pm$ 2.1 & 4.3 $\pm$ 2.3 & 25.6 $\pm$ 6.7 \\
+ &  & AEES & 5 & 62.5 $\pm$ 0.3 & 58.4 $\pm$ 1.2 & 4.2 $\pm$ 1.0 & 22.8 $\pm$ 4.6 \\
+ &  & Cosine & 5 & 63.3 $\pm$ 0.4 & 63.1 $\pm$ 0.4 & 0.2 $\pm$ 0.1 & 190.0 $\pm$ 7.3 \\
+ &  & Cosine + AEES & 5 & 62.7 $\pm$ 0.6 & 62.5 $\pm$ 0.5 & 0.2 $\pm$ 0.1 & 89.2 $\pm$ 92.5 \\
+\midrule
+Sym. 20\% & AdamW & Baseline & 5 & 58.6 $\pm$ 0.5 & 54.1 $\pm$ 0.7 & 4.5 $\pm$ 0.6 & 16.8 $\pm$ 0.8 \\
+ &  & Fixed 0.5 & 5 & 58.8 $\pm$ 0.5 & 54.4 $\pm$ 0.6 & 4.4 $\pm$ 0.6 & 18.4 $\pm$ 1.9 \\
+ &  & Fixed 1.0 & 5 & 58.6 $\pm$ 0.5 & 54.1 $\pm$ 0.7 & 4.5 $\pm$ 0.6 & 16.8 $\pm$ 0.8 \\
+ &  & Fixed 2.0 & 5 & 56.1 $\pm$ 0.4 & 51.6 $\pm$ 1.1 & 4.4 $\pm$ 0.8 & 15.6 $\pm$ 1.7 \\
+ &  & AEES & 5 & 62.2 $\pm$ 0.9 & 55.6 $\pm$ 0.6 & 6.6 $\pm$ 0.7 & 18.4 $\pm$ 3.8 \\
+ &  & Cosine & 5 & 58.6 $\pm$ 0.4 & 58.0 $\pm$ 0.7 & 0.6 $\pm$ 0.5 & 51.8 $\pm$ 79.5 \\
+ &  & Cosine + AEES & 5 & 62.0 $\pm$ 0.9 & 58.4 $\pm$ 0.5 & 3.6 $\pm$ 0.8 & 19.2 $\pm$ 2.2 \\
+ & SGD & Baseline & 5 & 57.0 $\pm$ 0.7 & 48.6 $\pm$ 1.6 & 8.4 $\pm$ 1.5 & 19.0 $\pm$ 1.6 \\
+ &  & Fixed 0.5 & 5 & 57.4 $\pm$ 0.6 & 50.6 $\pm$ 1.1 & 6.8 $\pm$ 0.9 & 20.0 $\pm$ 1.6 \\
+ &  & Fixed 1.0 & 5 & 57.0 $\pm$ 0.7 & 48.6 $\pm$ 1.6 & 8.4 $\pm$ 1.5 & 19.0 $\pm$ 1.6 \\
+ &  & Fixed 2.0 & 5 & 55.2 $\pm$ 0.8 & 46.0 $\pm$ 1.1 & 9.2 $\pm$ 0.8 & 25.6 $\pm$ 1.9 \\
+ &  & AEES & 5 & 62.5 $\pm$ 0.5 & 56.4 $\pm$ 0.7 & 6.1 $\pm$ 1.0 & 24.4 $\pm$ 3.3 \\
+ &  & Cosine & 5 & 62.2 $\pm$ 0.4 & 62.0 $\pm$ 0.4 & 0.2 $\pm$ 0.1 & 171.4 $\pm$ 15.1 \\
+ &  & Cosine + AEES & 5 & 63.1 $\pm$ 0.7 & 61.4 $\pm$ 0.3 & 1.6 $\pm$ 0.6 & 26.2 $\pm$ 2.8 \\
+\midrule
+Sym. 40\% & AdamW & Baseline & 5 & 51.7 $\pm$ 0.6 & 38.1 $\pm$ 0.1 & 13.6 $\pm$ 0.6 & 15.8 $\pm$ 1.5 \\
+ &  & Fixed 0.5 & 5 & 52.5 $\pm$ 0.7 & 39.0 $\pm$ 0.5 & 13.5 $\pm$ 0.8 & 17.4 $\pm$ 1.1 \\
+ &  & Fixed 1.0 & 5 & 51.7 $\pm$ 0.6 & 38.1 $\pm$ 0.1 & 13.6 $\pm$ 0.6 & 15.8 $\pm$ 1.5 \\
+ &  & Fixed 2.0 & 5 & 48.8 $\pm$ 1.0 & 35.7 $\pm$ 0.6 & 13.2 $\pm$ 0.6 & 15.8 $\pm$ 1.3 \\
+ &  & AEES & 5 & 55.0 $\pm$ 1.1 & 39.9 $\pm$ 1.2 & 15.1 $\pm$ 1.7 & 18.0 $\pm$ 1.6 \\
+ &  & Cosine & 5 & 51.7 $\pm$ 0.8 & 42.2 $\pm$ 0.5 & 9.5 $\pm$ 1.1 & 16.0 $\pm$ 0.7 \\
+ &  & Cosine + AEES & 5 & 54.7 $\pm$ 0.8 & 42.5 $\pm$ 1.4 & 12.2 $\pm$ 1.1 & 18.6 $\pm$ 1.5 \\
+ & SGD & Baseline & 5 & 50.1 $\pm$ 0.8 & 33.8 $\pm$ 1.2 & 16.3 $\pm$ 1.1 & 20.4 $\pm$ 1.5 \\
+ &  & Fixed 0.5 & 5 & 50.8 $\pm$ 0.7 & 34.9 $\pm$ 0.3 & 16.0 $\pm$ 0.7 & 20.0 $\pm$ 1.4 \\
+ &  & Fixed 1.0 & 5 & 50.1 $\pm$ 0.8 & 33.8 $\pm$ 1.2 & 16.3 $\pm$ 1.1 & 20.4 $\pm$ 1.5 \\
+ &  & Fixed 2.0 & 5 & 47.3 $\pm$ 1.3 & 31.7 $\pm$ 1.2 & 15.6 $\pm$ 0.7 & 26.0 $\pm$ 1.9 \\
+ &  & AEES & 5 & 55.6 $\pm$ 1.0 & 39.7 $\pm$ 3.8 & 16.0 $\pm$ 4.0 & 25.0 $\pm$ 2.5 \\
+ &  & Cosine & 5 & 50.1 $\pm$ 1.1 & 46.9 $\pm$ 0.8 & 3.2 $\pm$ 1.0 & 18.6 $\pm$ 1.5 \\
+ &  & Cosine + AEES & 5 & 56.0 $\pm$ 0.9 & 46.3 $\pm$ 0.6 & 9.7 $\pm$ 0.5 & 25.6 $\pm$ 1.9 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Detailed fixed learning-rate multiplier ablation results for noisy \cifar{}. Fixed multipliers use the same LR multiplier values available to the AEES controller. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better.}
+\label{tab:cifar_noisy_fixed_lr_ablation_detailed}
+\end{table}

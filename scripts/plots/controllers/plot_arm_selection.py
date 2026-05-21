@@ -11,28 +11,30 @@ Two settings produced by one CLI invocation each:
 
 For each setting and active axis, every episode is binned by the candidate-arm
 value the controller picked at that episode. We stack the cross-seed
-proportions to visualise whether the controller settled on one arm.
+proportions to visualize whether the controller settled on one arm.
 
-A centered rolling-mean (window ≈ 5% of episode count, odd) is applied for
-display only — the summary file reports raw proportions. The smoothing
+A centered rolling mean, with a window of roughly 5% of the episode count, is
+applied for display only. The summary file reports raw proportions. The smoothing
 preserves the columns-sum-to-1 property by averaging full episode slices.
 
-CLI:
-    python -m scripts.plots.controllers.plot_arm_selection \\
-        --runs-root results/cifar_noisy --out-dir results/plots/controllers \\
+Typical reproduction commands:
+    uv run python -m scripts.plots.controllers.plot_arm_selection \\
+        --runs-root archived_results/cifar_noisy \\
+        --out-dir reproduced_artifacts/figures/controllers \\
         --setting cifar_sym40
 
-    python -m scripts.plots.controllers.plot_arm_selection \\
-        --runs-root results/noisy_agnews --out-dir results/plots/controllers \\
+    uv run python -m scripts.plots.controllers.plot_arm_selection \\
+        --runs-root archived_results/noisy_agnews \\
+        --out-dir reproduced_artifacts/figures/controllers \\
         --setting agnews_noisy
 
-Outputs (on success):
-    arm_selection_<setting>.pdf
-    arm_selection_<setting>.png
-    arm_selection_<setting>.summary.txt
+Outputs on success:
+    <out-dir>/arm_selection_<setting>.pdf
+    <out-dir>/arm_selection_<setting>.png
+    <out-dir>/arm_selection_<setting>.summary.txt
 
-Outputs (on failure):
-    arm_selection_<setting>.MISSING.md
+On failure:
+    <out-dir>/arm_selection_<setting>.MISSING.md
 """
 
 from __future__ import annotations

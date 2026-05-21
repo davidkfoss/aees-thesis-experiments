@@ -1,13 +1,22 @@
-"""SST-2 validation-accuracy trajectories (Task 5).
+"""SST-2 validation-accuracy trajectories.
 
-Single panel: epoch (1-indexed) vs validation accuracy (%) for four methods —
-flat AdamW, AdamW + Warmup-linear, AEES-Dual (no scheduler), and AEES-Dual
-combined with Warmup-linear. Mean ± std bands over 5 seeds, with peak/final
-markers per line. Matches the Task 3 template.
+Single-panel figure: epoch, 1-indexed, vs. validation accuracy (%) for four
+methods: flat AdamW, AdamW + Warmup-linear, AEES-Dual without a scheduler, and
+AEES-Dual combined with Warmup-linear. The figure reports mean +/- SD bands over
+five seeds, with peak/final markers per line.
 
-Run with:
-    python -m scripts.plots.nlp.plot_sst2_curves \\
-        --runs-root results/sst2 --out-dir results/plots/nlp
+Typical reproduction command:
+    uv run python -m scripts.plots.nlp.plot_sst2_curves \\
+        --runs-root archived_results/sst2 \\
+        --out-dir reproduced_artifacts/figures/nlp
+
+Outputs on success:
+    <out-dir>/sst2_curves.pdf
+    <out-dir>/sst2_curves.png
+    <out-dir>/sst2_curves.summary.txt
+
+On failure:
+    <out-dir>/sst2_curves.MISSING.md
 """
 
 from __future__ import annotations

@@ -11,8 +11,8 @@ from statistics import mean, stdev
 from typing import Optional
 
 
-RESULTS_DIR = Path("results/compute_overhead")
-OUTPUT_DIR = Path("results/tables/compute_overhead")
+RESULTS_DIR = Path("archived_results/compute_overhead")
+OUTPUT_DIR = Path("reproduced_artifacts/tables/compute_overhead")
 
 TASK_ORDER = ["CIFAR-100", "SST-2", "AG News"]
 OPTIMIZER_ORDER = ["SGD", "AdamW"]

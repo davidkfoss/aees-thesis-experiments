@@ -1,15 +1,22 @@
-"""Task 4 — Clean CIFAR-100 peak vs. final bar plot.
+"""Clean CIFAR-100 peak vs. final bar plot.
 
 Grouped bar chart comparing peak (best val) vs. final-epoch validation accuracy
 for six AdamW variants on clean CIFAR-100. Solid bar = peak, hatched bar = final.
 
-Outputs (on success):
-    results/plots/cifar/clean_cifar_barplot.pdf
-    results/plots/cifar/clean_cifar_barplot.png
-    results/plots/cifar/clean_cifar_barplot.summary.txt
+Outputs are written under the directory passed via ``--out-dir``.
+
+Typical reproduction command:
+    uv run python -m scripts.plots.cifar.plot_clean_cifar_barplot \
+        --runs-root archived_results/cifar_clean \
+        --out-dir reproduced_artifacts/figures/cifar
+
+Outputs on success:
+    <out-dir>/clean_cifar_barplot.pdf
+    <out-dir>/clean_cifar_barplot.png
+    <out-dir>/clean_cifar_barplot.summary.txt
 
 On failure:
-    results/plots/cifar/clean_cifar_barplot.MISSING.md
+    <out-dir>/clean_cifar_barplot.MISSING.md
 """
 
 from __future__ import annotations

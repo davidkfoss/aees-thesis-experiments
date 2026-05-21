@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Noisy AG News $\sigma$-axis falsification ablation. All seven conditions use AdamW (base $\eta = 5\times10^{-5}$) on AG News with 20\% symmetric training-label noise; clean validation labels. `Fixed $\sigma$' injects a constant gradient-noise standard deviation. `Random $\sigma$' samples $\sigma \in \{0, 0.005, 0.01\}$ uniformly at random per episode (no reward feedback). AEES variants use the discounted-UCB controller. Best and final validation accuracy are mean $\pm$ standard deviation across $n$ seeds. Drop is best$-$final in percentage points (lower is better). Bold and italics mark the best and second-best values per column.}
+\label{tab:nlp_noise_ablation}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccccc}
+\toprule
+Condition & $n$ & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+AdamW (Flat, $\sigma=0$) & 5 & 92.72 $\pm$ 0.22 & 90.12 $\pm$ 0.57 & 2.59 $\pm$ 0.69 & 1.80 $\pm$ 0.84 \\
+AdamW + WL ($\sigma=0$) & 5 & 93.19 $\pm$ 0.19 & 90.79 $\pm$ 0.17 & 2.40 $\pm$ 0.28 & 2.00 $\pm$ 0.00 \\
+\midrule
+Fixed $\sigma=0.005$ + WL & 5 & \emph{93.55 $\pm$ 0.07} & 93.47 $\pm$ 0.06 & 0.09 $\pm$ 0.08 & 4.00 $\pm$ 0.71 \\
+Fixed $\sigma=0.01$ + WL & 5 & 93.40 $\pm$ 0.10 & 93.40 $\pm$ 0.10 & \textbf{0.00 $\pm$ 0.00} & 4.80 $\pm$ 0.45 \\
+Random $\sigma$ + WL & 5 & \textbf{93.58 $\pm$ 0.07} & \textbf{93.58 $\pm$ 0.06} & \emph{0.00 $\pm$ 0.01} & 4.80 $\pm$ 0.45 \\
+AEES-Noise + WL & 5 & 93.47 $\pm$ 0.09 & 93.45 $\pm$ 0.10 & 0.01 $\pm$ 0.02 & 4.60 $\pm$ 0.89 \\
+AEES-Dual + WL & 5 & 93.55 $\pm$ 0.07 & \emph{93.51 $\pm$ 0.09} & 0.05 $\pm$ 0.07 & 4.60 $\pm$ 0.55 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,42 @@
+\begin{table}[t]
+  \centering
+  \caption{
+    Wall-clock training overhead of scheduler and \method{} configurations, measured on a single NVIDIA RTX PRO 6000.
+    Values are averaged over repeated timing runs with the same random seed.
+    The \emph{Baseline} column reports seconds per epoch for the corresponding no-scheduler optimizer baseline;
+    all remaining columns report percentage change in epoch wall-clock time relative to that baseline.
+    \method{}-LR adapts only the learning-rate multiplier, \method{}-Noise adapts only gradient-noise magnitude, and \method{}-Dual adapts both axes.
+  }
+  \label{tab:compute-overhead}
+  \sisetup{
+    table-format = +2.1,
+    table-space-text-post = {\,\%},
+    detect-weight,
+    round-mode = places,
+    round-precision = 1
+  }
+  \begin{tabular}{
+      l
+      S[table-format=3.2]
+      S[table-format=+2.1]
+      S[table-format=+2.1]
+      S[table-format=+2.1]
+      S[table-format=+2.1]
+    }
+    \toprule
+    & & \multicolumn{4}{c}{Overhead relative to baseline (\%)} \\
+    \cmidrule(l){3-6}
+    {Task / Optimizer}
+      & {Baseline (s/ep)}
+      & {LR sched.}
+      & {\method{}-LR}
+      & {\method{}-Noise}
+      & {\method{}-Dual} \\
+    \midrule
+    CIFAR-100 / SGD & 5.17 & -0.0 & -0.5 & +3.4 & +4.0 \\
+    CIFAR-100 / AdamW & 4.58 & +0.5 & +15.5 & +17.3 & +18.3 \\
+    SST-2 / AdamW & 48.88 & +0.5 & +30.3 & +39.1 & +38.7 \\
+    AG News / AdamW & 117.14 & +0.1 & +19.4 & +26.7 & +24.5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

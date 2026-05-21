@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{Axis-ablation results for SST-2. All configurations use AdamW with warmup-linear scheduling as the base setup. \method{}-LR adapts only the learning-rate multiplier, \method{}-Noise adapts only gradient-noise magnitude, and \method{}-Dual adapts both axes. Best and final validation accuracy are reported as mean $\pm$ standard deviation across seeds. Drop denotes the best-to-final validation decrease in percentage points, where lower is better. Bold and italics mark the best and second-best values in the table, respectively.}}
+\label{tab:sst2-axis}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccc}
+\toprule
+Method & Best (\%) & Final (\%) & Drop (pp) & Peak epoch \\
+\midrule
+AdamW + warmup-linear & 90.48 $\pm$ 0.27 & 89.84 $\pm$ 0.35 & 0.64 $\pm$ 0.40 & 2.20 $\pm$ 0.84 \\
+AEES-LR + warmup-linear & 90.55 $\pm$ 0.35 & 90.21 $\pm$ 0.41 & \textbf{0.34 $\pm$ 0.18} & 2.60 $\pm$ 1.52 \\
+AEES-Noise + warmup-linear & \textbf{91.12 $\pm$ 0.38} & \textbf{90.57 $\pm$ 0.29} & 0.55 $\pm$ 0.42 & 3.20 $\pm$ 1.30 \\
+AEES-Dual + warmup-linear & \emph{90.80 $\pm$ 0.35} & \emph{90.44 $\pm$ 0.42} & \emph{0.37 $\pm$ 0.38} & 3.00 $\pm$ 1.41 \\
+\bottomrule
+\end{tabular}
+\end{table}
