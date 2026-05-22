@@ -163,7 +163,7 @@ Download and extract the archive at the repository root so that the directory is
 
 Three top-level directories support regenerating the thesis and ICONIP 2026 paper-submission artifacts: `archived_results/`, `generated_artifacts/`, and `reproduced_artifacts/` (see the Layout section for what each holds). The reporting scripts read from `archived_results/` — the canonical archived bundle, which is distinct from the live `results/` tree that the experiment runners write to.
 
-Table scripts run directly (`uv run python scripts/tables/<name>.py`) using archived-results defaults; figure scripts take explicit `--runs-root` and `--out-dir`, where the correct `--runs-root` varies per script. Start with [`archived_results/README.md`](archived_results/README.md) — it documents the expected bundle layout, per-script figure input roots and required flags, and where regenerated output is written.
+Both table and figure scripts run directly (`uv run python ...`) using archived-results defaults: they read from `archived_results/` and write to `reproduced_artifacts/{tables,figures}/...`. Pass `--runs-root`/`--out-dir` only to override the defaults. A few figure scripts produce one figure per variant and accept an optional `--setting`/`--noise-setting` selector — omit it to emit all variants. To regenerate everything at once, run `make artifacts` (or `make plots` / `make tables`). See [`archived_results/README.md`](archived_results/README.md) for the expected bundle layout.
 
 ## Tests
 

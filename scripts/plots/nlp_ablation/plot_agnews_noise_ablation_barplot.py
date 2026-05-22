@@ -169,11 +169,13 @@ def _summary_lines(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--runs-root", type=pathlib.Path, required=True,
+        "--runs-root", type=pathlib.Path,
+        default=pathlib.Path("archived_results"),
         help="Parent directory; walked recursively for noisy AG News runs.",
     )
     parser.add_argument(
-        "--out-dir", type=pathlib.Path, required=True,
+        "--out-dir", type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/nlp_ablation"),
         help=f"Output directory for {NAME}.{{pdf,png,summary.txt}}",
     )
     args = parser.parse_args(argv)

@@ -38,7 +38,7 @@ Some table-generation scripts also emit summary CSV files. These CSVs contain th
 
 ## Regeneration workflow
 
-Figure scripts write to a user-specified output directory and should normally be run with `--out-dir reproduced_artifacts/figures/...`. The required `--runs-root` differs per figure script (see `archived_results/README.md` for the per-script table); check each script's `--help`.
+Figure scripts are configured with defaults that read from `archived_results/` and write to `reproduced_artifacts/figures/...`; they can normally be run directly with `uv run python ...`. Pass `--runs-root`/`--out-dir` only to override.
 
 `figures/method/aees_overview.{pdf,png}` is built from TikZ by `scripts/plots/method/build_aees_overview.sh` (compiling `aees_overview.tex`), not by the Python figure scripts.
 

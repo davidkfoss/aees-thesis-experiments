@@ -256,14 +256,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--runs-root",
-        required=True,
         type=pathlib.Path,
+        default=pathlib.Path("archived_results/sst2"),
         help="Directory containing SST-2 result JSONs (e.g. archived_results/sst2).",
     )
     parser.add_argument(
         "--out-dir",
-        required=True,
         type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/nlp"),
         help="Output directory for the figure (e.g. reproduced_artifacts/figures/nlp).",
     )
     args = parser.parse_args()

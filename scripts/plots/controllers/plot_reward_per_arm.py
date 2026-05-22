@@ -57,6 +57,12 @@ from scripts.plots._style import (
 
 SETTINGS = ("cifar_sym40", "agnews_noisy")
 
+# Default archived-results subfolder per setting (used when --runs-root is omitted).
+SETTING_RUNS_SUBDIR: dict[str, str] = {
+    "cifar_sym40": "cifar_noisy",
+    "agnews_noisy": "noisy_agnews",
+}
+
 NAME_PREFIX = "reward_per_arm"
 
 
@@ -634,22 +640,39 @@ def _run_agnews_noisy(args) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--runs-root", type=pathlib.Path, required=True)
-    parser.add_argument("--out-dir", type=pathlib.Path, required=True)
+    parser.add_argument(
+        "--runs-root", type=pathlib.Path, default=None,
+        help="Root directory containing the flagship runs. Defaults to the "
+             "archived_results subfolder for the chosen setting.",
+    )
+    parser.add_argument(
+        "--out-dir", type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/controllers"),
+    )
     parser.add_argument(
         "--setting",
         choices=SETTINGS,
-        required=True,
-        help="Which figure to emit (cifar_sym40 or agnews_noisy).",
+        default=None,
+        help="Which figure to emit (cifar_sym40 or agnews_noisy). "
+             "Omit to emit all settings.",
     )
     args = parser.parse_args(argv)
 
-    if args.setting == "cifar_sym40":
-        return _run_cifar_sym40(args)
-    if args.setting == "agnews_noisy":
-        return _run_agnews_noisy(args)
-    parser.error(f"unknown --setting {args.setting!r}")
-    return 2
+    runners = {
+        "cifar_sym40": _run_cifar_sym40,
+        "agnews_noisy": _run_agnews_noisy,
+    }
+    override = args.runs_root
+    settings = [args.setting] if args.setting else list(SETTINGS)
+    rc = 0
+    for setting in settings:
+        args.runs_root = (
+            override if override is not None
+            else pathlib.Path("archived_results") / SETTING_RUNS_SUBDIR[setting]
+        )
+        if runners[setting](args) != 0:
+            rc = 1
+    return rc
 
 
 if __name__ == "__main__":

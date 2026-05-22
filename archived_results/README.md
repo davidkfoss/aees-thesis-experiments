@@ -41,45 +41,33 @@ The thesis uses the broader archive, including clean CIFAR-100, clean AG News, S
 
 The ICONIP 2026 paper submission uses a scoped subset of this archive, primarily:
 
+- `checkpointing/`
+- `cifar_ablation/`
 - `cifar_noisy/`
 - `noisy_agnews/`
 - `nlp_noise_ablation/`
 - `compute_overhead/`
-- `checkpointing/`
-- `cifar_ablation/`
 
 ## Regeneration workflow
 
-Figure-generation scripts require explicit input and output paths (`--runs-root` and `--out-dir`). Most read from the matching subfolder of `archived_results/` and write to `reproduced_artifacts/figures/...`, but the correct `--runs-root` is **not uniform**, and several scripts take additional required flags. Always check a script's `--help` for its expected layout. The non-obvious cases are:
-
-| Figure script                                                    | `--runs-root`                                                                                            | Required extra flags                                                         |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `cifar.plot_cifar_noisy_curves`                                  | `archived_results/cifar_noisy`                                                                           | `--noise-setting {asym20,sym20,sym40}` (run once per setting)                |
-| `controllers.plot_arm_selection`                                 | `archived_results/cifar_noisy` _or_ `archived_results/noisy_agnews` (depends on setting)                 | `--setting {agnews_noisy,cifar_sym40,cifar_sym40_cosine,cifar_sym40_paired}` |
-| `controllers.plot_reward_per_arm`                                | `archived_results/cifar_noisy` _or_ `archived_results/noisy_agnews` (depends on setting)                 | `--setting {cifar_sym40,agnews_noisy}`                                       |
-| `controllers.plot_update_norm_trajectory`                        | `archived_results` (spans `cifar_clean/`, `sst2/`, `noisy_agnews/`)                                      | —                                                                            |
-| `nlp_ablation.plot_agnews_noise_ablation_barplot` / `..._curves` | `archived_results` (the whole tree; walked recursively across `noisy_agnews/` and `nlp_noise_ablation/`) | —                                                                            |
-| `diagnostics.plot_peak_checkpoint_diagnostics`                   | `archived_results/checkpointing`                                                                         | —                                                                            |
-| `cifar_ablation.plot_cifar_noise_ablation_barplot`               | `archived_results/cifar_noise_ablation`                                                                  | —                                                                            |
-
-Example figure command:
+Both the figure scripts (`scripts/plots/`) and table scripts (`scripts/tables/`) are configured with default paths. In normal use they run directly with no arguments: they read from `archived_results/` and write regenerated outputs to `reproduced_artifacts/figures/...` and `reproduced_artifacts/tables/...` respectively.
 
 ```bash
-uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves \
-  --runs-root archived_results/cifar_noisy \
-  --out-dir reproduced_artifacts/figures/cifar \
-  --noise-setting sym40
-```
-
-When a figure script cannot find its inputs, it may exit non-zero and write `<out-dir>/<figure-name>.MISSING.md` listing the exact paths it looked for. Check that file to diagnose a failed run.
-
-Table-generation scripts are configured with default paths. In normal use, they can be run directly with `uv run python ...`. By default, table scripts read from `archived_results/` and write regenerated outputs to `reproduced_artifacts/tables/...`.
-
-Example table command:
-
-```bash
+uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves
 uv run python scripts/tables/make_nlp_noise_ablation_table.py
 ```
+
+To regenerate everything at once, use the bundled runners (from the repo root):
+
+```bash
+make plots      # or: ./scripts/plots/run_all.sh
+make tables     # or: ./scripts/tables/run_all.sh
+make artifacts  # both
+```
+
+A few figure scripts produce one figure per variant and accept an optional selector — `cifar.plot_cifar_noisy_curves` takes `--noise-setting`, and `controllers.plot_arm_selection` / `controllers.plot_reward_per_arm` take `--setting`. Omit the selector to emit all variants. Pass `--runs-root`/`--out-dir` to any script to override its default input/output paths; check a script's `--help` for details.
+
+When a figure script cannot find its inputs, it may exit non-zero and write `<out-dir>/<figure-name>.MISSING.md` listing the exact paths it looked for. Check that file to diagnose a failed run.
 
 Regenerated outputs should be compared against the curated artifacts in `generated_artifacts/` before replacing any committed files.
 

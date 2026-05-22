@@ -86,12 +86,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--runs-root",
-        required=True,
+        default="archived_results/cifar_clean",
         help="Directory containing the clean CIFAR-100 result JSONs.",
     )
     parser.add_argument(
         "--out-dir",
-        required=True,
+        default="reproduced_artifacts/figures/cifar",
         help="Directory where the PDF/PNG/summary (or MISSING.md) get written.",
     )
     args = parser.parse_args(argv)

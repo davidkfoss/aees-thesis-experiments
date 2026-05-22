@@ -7,7 +7,7 @@ It is separate from `generated_artifacts/`, which contains the curated generated
 ## Typical workflow
 
 1. Place or extract the archived result bundle under `archived_results/`.
-2. Regenerate figures by running the figure scripts with explicit `--runs-root` and `--out-dir` arguments.
+2. Regenerate figures by running the figure scripts directly with `uv run python ...`; their defaults read from `archived_results/` and write to `reproduced_artifacts/figures/...`.
 3. Regenerate tables by running the table-generation scripts directly with `uv run python ...`; their defaults read from `archived_results/` and write to `reproduced_artifacts/tables/...`.
 4. Compare regenerated files against the committed files in `generated_artifacts/`.
 5. Only copy files into `generated_artifacts/` if you intentionally want to update the curated artifacts.
@@ -15,10 +15,7 @@ It is separate from `generated_artifacts/`, which contains the curated generated
 Example figure command:
 
 ```bash
-uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves \
-  --runs-root archived_results/cifar_noisy \
-  --out-dir reproduced_artifacts/figures/cifar \
-  --noise-setting sym40
+uv run python -m scripts.plots.cifar.plot_cifar_noisy_curves
 ```
 
 Example table command:

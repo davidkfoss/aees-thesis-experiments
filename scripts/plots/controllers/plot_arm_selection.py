@@ -120,6 +120,17 @@ SETTING_SPEC: dict[str, dict[str, Any]] = {
 }
 
 
+# Default archived-results subfolder per setting (used when --runs-root is
+# omitted). The cifar settings share archived_results/cifar_noisy; the AG News
+# setting reads archived_results/noisy_agnews.
+SETTING_RUNS_SUBDIR: dict[str, str] = {
+    "cifar_sym40": "cifar_noisy",
+    "cifar_sym40_cosine": "cifar_noisy",
+    "cifar_sym40_paired": "cifar_noisy",
+    "agnews_noisy": "noisy_agnews",
+}
+
+
 # ---------------------------------------------------------------------------
 # Run-filtering predicates (per setting).
 # ---------------------------------------------------------------------------
@@ -584,7 +595,7 @@ def _quarter_means(
     )
 
 
-def _run_paired(args, spec: dict[str, Any]) -> int:
+def _run_paired(args, spec: dict[str, Any], runs_root: pathlib.Path) -> int:
     """Render a two-panel arm-selection figure comparing two component settings.
 
     Each panel shows per-arm trajectories (mean ± SD across seeds) for one
@@ -602,12 +613,12 @@ def _run_paired(args, spec: dict[str, Any]) -> int:
         # Load runs and compute per-axis data for each component.
         per_component: list[dict[str, Any]] = []
         for comp_key in component_keys:
-            items = _load_runs(args.runs_root, comp_key)
+            items = _load_runs(runs_root, comp_key)
             if not items:
                 write_missing(
                     args.out_dir, name,
                     f"No flagship runs found for component '{comp_key}' "
-                    f"under {args.runs_root.resolve()}.\n",
+                    f"under {runs_root.resolve()}.\n",
                 )
                 return 1
             items_sorted = sorted(
@@ -695,7 +706,7 @@ def _run_paired(args, spec: dict[str, Any]) -> int:
             return str(p.resolve())
 
     summary_lines: list[str] = []
-    summary_lines.append(f"runs-root: {_rel(args.runs_root)}")
+    summary_lines.append(f"runs-root: {_rel(runs_root)}")
     summary_lines.append(f"setting: {spec['name']}")
     summary_lines.append(f"component_settings: {component_keys}")
     summary_lines.append("")
@@ -728,23 +739,10 @@ def _run_paired(args, spec: dict[str, Any]) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--runs-root", type=pathlib.Path, required=True,
-        help="Root directory containing the flagship runs.",
-    )
-    parser.add_argument(
-        "--out-dir", type=pathlib.Path, required=True,
-        help="Directory to write the arm_selection_<setting> outputs.",
-    )
-    parser.add_argument(
-        "--setting", choices=sorted(SETTING_SPEC.keys()), required=True,
-        help="Which setting to plot.",
-    )
-    args = parser.parse_args(argv)
-
-    spec = SETTING_SPEC[args.setting]
+def _run_setting(
+    args: argparse.Namespace, setting: str, runs_root: pathlib.Path
+) -> int:
+    spec = SETTING_SPEC[setting]
     name = spec["name"]
     axis_keys: list[str] = spec["axes"]
 
@@ -752,15 +750,15 @@ def main(argv: list[str] | None = None) -> int:
     # render their per-arm-lines into a shared two-panel figure. Bypasses
     # the per-axis loop used by the other settings.
     if "component_settings" in spec:
-        return _run_paired(args, spec)
+        return _run_paired(args, spec, runs_root)
 
     try:
-        items = _load_runs(args.runs_root, args.setting)
+        items = _load_runs(runs_root, setting)
         if not items:
             write_missing(
                 args.out_dir, name,
-                f"No flagship runs found for setting '{args.setting}' under "
-                f"{args.runs_root.resolve()}.\n",
+                f"No flagship runs found for setting '{setting}' under "
+                f"{runs_root.resolve()}.\n",
             )
             return 1
 
@@ -810,7 +808,7 @@ def main(argv: list[str] | None = None) -> int:
         # *does* learn a preference. agnews_noisy keeps the stacked-area
         # display because its story is that the bands stay roughly equal
         # across all arms.
-        use_lines = args.setting in ("cifar_sym40", "cifar_sym40_cosine")
+        use_lines = setting in ("cifar_sym40", "cifar_sym40_cosine")
 
         for ax, axis_key in zip(panels, axis_keys):
             entry = per_axis[axis_key]
@@ -864,8 +862,8 @@ def main(argv: list[str] | None = None) -> int:
             return str(p.resolve())
 
     summary_lines: list[str] = []
-    summary_lines.append(f"runs-root: {_rel(args.runs_root)}")
-    summary_lines.append(f"setting: {args.setting}")
+    summary_lines.append(f"runs-root: {_rel(runs_root)}")
+    summary_lines.append(f"setting: {setting}")
     summary_lines.append(f"axes plotted: {axis_keys}")
     summary_lines.append("")
     summary_lines.append("Files loaded:")
@@ -927,6 +925,36 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {png_path}")
     print(f"wrote {summary_path}")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--runs-root", type=pathlib.Path, default=None,
+        help="Root directory containing the flagship runs. Defaults to the "
+             "archived_results subfolder for the chosen setting.",
+    )
+    parser.add_argument(
+        "--out-dir", type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/controllers"),
+        help="Directory to write the arm_selection_<setting> outputs.",
+    )
+    parser.add_argument(
+        "--setting", choices=sorted(SETTING_SPEC.keys()), default=None,
+        help="Which setting to plot. Omit to emit all settings.",
+    )
+    args = parser.parse_args(argv)
+
+    settings = [args.setting] if args.setting else sorted(SETTING_SPEC.keys())
+    rc = 0
+    for setting in settings:
+        if args.runs_root is not None:
+            runs_root = args.runs_root
+        else:
+            runs_root = pathlib.Path("archived_results") / SETTING_RUNS_SUBDIR[setting]
+        if _run_setting(args, setting, runs_root) != 0:
+            rc = 1
+    return rc
 
 
 if __name__ == "__main__":

@@ -296,13 +296,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--runs-root",
         type=pathlib.Path,
-        required=True,
+        default=pathlib.Path("archived_results/cifar_noisy"),
         help="Root directory containing cifar100_sym40_seed* subdirectories.",
     )
     parser.add_argument(
         "--out-dir",
         type=pathlib.Path,
-        required=True,
+        default=pathlib.Path("reproduced_artifacts/figures/cifar"),
         help="Directory in which to write the cifar_symmetric40_curves outputs.",
     )
     args = parser.parse_args(argv)

@@ -484,13 +484,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--runs-root",
         type=pathlib.Path,
-        required=True,
+        default=pathlib.Path("archived_results"),
         help="Archived-results root containing cifar_clean/, sst2/, and noisy_agnews/ subfolders (e.g. archived_results).",
     )
     parser.add_argument(
         "--out-dir",
         type=pathlib.Path,
-        required=True,
+        default=pathlib.Path("reproduced_artifacts/figures/controllers"),
         help="Directory in which to write the update_norm_trajectory outputs.",
     )
     args = parser.parse_args(argv)

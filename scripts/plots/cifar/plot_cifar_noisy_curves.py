@@ -259,32 +259,11 @@ def _build_figure(
     return fig
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--runs-root",
-        type=pathlib.Path,
-        required=True,
-        help="Root directory with cifar100_<noise>_seed<N> subdirectories.",
-    )
-    parser.add_argument(
-        "--out-dir",
-        type=pathlib.Path,
-        required=True,
-        help="Output directory for the cifar_<noise>_curves outputs.",
-    )
-    parser.add_argument(
-        "--noise-setting",
-        choices=NOISE_SETTINGS,
-        required=True,
-        help="Which noisy-label setting to plot.",
-    )
-    args = parser.parse_args(argv)
-
-    name = f"cifar_{args.noise_setting}_curves"
+def _run_one(args: argparse.Namespace, noise_setting: str) -> int:
+    name = f"cifar_{noise_setting}_curves"
 
     try:
-        runs = load_set(args.runs_root, _make_predicate(args.noise_setting))
+        runs = load_set(args.runs_root, _make_predicate(noise_setting))
         bucketed = _bucket(runs)
 
         missing_cells: list[str] = []
@@ -297,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
                 "Missing runs for the following (optimizer, variant_key) cells:\n\n"
                 + "\n".join(f"- {c}" for c in missing_cells)
                 + f"\n\nSearched under: {args.runs_root}\n"
-                + f"Noise setting: {args.noise_setting}\n"
+                + f"Noise setting: {noise_setting}\n"
             )
             write_missing(args.out_dir, name, reason)
             return 1
@@ -311,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         if not Ts or max(Ts) < 2:
             raise ValueError(f"degenerate trajectory length(s): {sorted(Ts)}")
 
-        fig = _build_figure(cells, args.noise_setting)
+        fig = _build_figure(cells, noise_setting)
     except Exception as exc:
         reason = (
             f"Failed to build {name}.\n\n"
@@ -325,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary_lines: list[str] = []
     summary_lines.append(f"runs-root: {args.runs_root.resolve()}")
-    summary_lines.append(f"noise-setting: {args.noise_setting}")
+    summary_lines.append(f"noise-setting: {noise_setting}")
     summary_lines.append("")
     summary_lines.append("Per-cell seed counts and statistics:")
     for opt_key, opt_title in PANELS:
@@ -348,6 +327,36 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {pdf_path}")
     print(f"wrote {png_path}")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--runs-root",
+        type=pathlib.Path,
+        default=pathlib.Path("archived_results/cifar_noisy"),
+        help="Root directory with cifar100_<noise>_seed<N> subdirectories.",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/cifar"),
+        help="Output directory for the cifar_<noise>_curves outputs.",
+    )
+    parser.add_argument(
+        "--noise-setting",
+        choices=NOISE_SETTINGS,
+        default=None,
+        help="Which noisy-label setting to plot. Omit to emit all settings.",
+    )
+    args = parser.parse_args(argv)
+
+    settings = [args.noise_setting] if args.noise_setting else list(NOISE_SETTINGS)
+    rc = 0
+    for noise_setting in settings:
+        if _run_one(args, noise_setting) != 0:
+            rc = 1
+    return rc
 
 
 if __name__ == "__main__":

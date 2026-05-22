@@ -274,7 +274,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory holding cifar100_asym20/ and cifar100_sym40/ rerun JSONs.",
     )
     parser.add_argument(
-        "--out-dir", type=pathlib.Path, required=True,
+        "--out-dir", type=pathlib.Path,
+        default=pathlib.Path("reproduced_artifacts/figures/diagnostics"),
         help="Output directory for the peak_checkpoint_diagnostics outputs.",
     )
     args = parser.parse_args(argv)
