@@ -4,7 +4,7 @@ This directory is the expected location for archived experiment outputs used to 
 
 The archived result bundle is available as a GitHub release asset:
 
-<https://github.com/davidkfoss/aees-thesis-experiments/releases/tag/v0.1.0>
+<https://github.com/davidkfoss/aees-thesis-experiments/releases/tag/v0.1.1>
 
 The bundle is not tracked in Git because it contains large per-run output files. To regenerate tables and figures from archived results, place or extract it so that the directory structure matches:
 

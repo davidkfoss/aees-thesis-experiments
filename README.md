@@ -157,7 +157,7 @@ The archived result files are the authoritative source for the numerical tables 
 
 The archived result bundle is distributed as a GitHub release asset:
 
-<https://github.com/davidkfoss/aees-thesis-experiments/releases/tag/v0.1.0>
+<https://github.com/davidkfoss/aees-thesis-experiments/releases/tag/v0.1.1>
 
 Download and extract the archive at the repository root so that the directory is named `archived_results/`.
 
