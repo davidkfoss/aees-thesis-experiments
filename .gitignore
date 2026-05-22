@@ -42,3 +42,7 @@ archived_results/**
 reproduced_artifacts/**
 !reproduced_artifacts/README.md
 !reproduced_artifacts/.gitkeep
+!reproduced_artifacts/tables/
+!reproduced_artifacts/tables/.gitkeep
+!reproduced_artifacts/figures/
+!reproduced_artifacts/figures/.gitkeep
