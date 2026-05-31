@@ -11,6 +11,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from typing import Dict, List, Optional, Tuple
 
+from _paired_stats import compare_paired, fmt_diff_ci, fmt_pm, fmt_pvalue
+
 RESULTS_ROOT = Path("archived_results/cifar_noisy")
 OUTPUT_DIR = Path("reproduced_artifacts/tables/cifar_noisy")
 
@@ -302,6 +304,124 @@ def best_fixed_for(
     return max(candidates, key=lambda x: getattr(x[1], metric_name))
 
 
+# Optimizer display labels for the paired-statistics table. SGD here is SGD
+# with momentum (base LR 0.1), so the supplementary stats table spells it out.
+OPTIMIZER_DISPLAY = {
+    "AdamW": "AdamW",
+    "SGD": "SGD+M",
+}
+
+
+def index_runs_by_seed(
+    runs: List[RunMetrics],
+) -> Dict[Tuple[str, str, str], Dict[int, RunMetrics]]:
+    """(task, optimizer, method) -> {seed: RunMetrics} for paired alignment."""
+    out: Dict[Tuple[str, str, str], Dict[int, RunMetrics]] = defaultdict(dict)
+    for run in runs:
+        out[(run.task, run.optimizer, run.method)][run.seed] = run
+    return out
+
+
+def build_aees_vs_best_fixed_stats_table(
+    runs: List[RunMetrics],
+    agg: Dict[Tuple[str, str, str], AggMetrics],
+) -> str:
+    """Paired seed-level AEES vs retrospectively best fixed-multiplier table.
+
+    For each noise--optimizer setting the best fixed multiplier is selected
+    from the AEES candidate set (Fixed 0.5/1.0/2.0) by mean peak validation
+    accuracy, then compared against AEES on peak validation accuracy using
+    seed-aligned paired differences (AEES minus best fixed).
+    """
+    by_seed = index_runs_by_seed(runs)
+
+    lines: List[str] = []
+    lines.append("\\begin{table}[t]")
+    lines.append("\\centering")
+    lines.append("\\small")
+    lines.append("\\setlength{\\tabcolsep}{4pt}")
+    lines.append("\\resizebox{\\textwidth}{!}{%")
+    lines.append("\\begin{tabular}{llccccc}")
+    lines.append("\\toprule")
+    lines.append(
+        "Noise & Optimizer & Best fixed & Fixed Best (\\%) & AEES Best (\\%) "
+        "& $\\Delta$ Best (pp) & $p$ \\\\"
+    )
+    lines.append("\\midrule")
+
+    for task_idx, task in enumerate(TASK_ORDER):
+        if task_idx > 0:
+            lines.append("\\midrule")
+
+        for opt_idx, optimizer in enumerate(OPTIMIZER_ORDER):
+            aees_seeds = by_seed.get((task, optimizer, "AEES"), {})
+            if not aees_seeds:
+                raise SystemExit(
+                    f"Missing AEES runs for noise={task}, optimizer={optimizer}; "
+                    f"cannot build AEES-vs-best-fixed comparison."
+                )
+
+            best_fixed = best_fixed_for(agg, task, optimizer, "best_val_mean")
+            if best_fixed is None:
+                raise SystemExit(
+                    f"Missing fixed-multiplier runs ({', '.join(FIXED_METHODS)}) "
+                    f"for noise={task}, optimizer={optimizer}; cannot select a "
+                    f"best fixed control."
+                )
+            best_fixed_method, _ = best_fixed
+
+            fixed_seeds = by_seed.get((task, optimizer, best_fixed_method), {})
+            if not fixed_seeds:
+                raise SystemExit(
+                    f"Missing per-seed runs for best fixed control "
+                    f"'{best_fixed_method}' at noise={task}, optimizer={optimizer}."
+                )
+
+            shared = sorted(set(aees_seeds) & set(fixed_seeds))
+            if not shared:
+                raise SystemExit(
+                    f"No shared seeds between AEES (seeds={sorted(aees_seeds)}) "
+                    f"and '{best_fixed_method}' (seeds={sorted(fixed_seeds)}) for "
+                    f"noise={task}, optimizer={optimizer}; cannot pair."
+                )
+
+            aees_vals = [aees_seeds[s].best_val for s in shared]
+            fixed_vals = [fixed_seeds[s].best_val for s in shared]
+            cmp = compare_paired(aees_vals, fixed_vals, scale=100.0)
+
+            noise_col = TASK_TITLES[task] if opt_idx == 0 else ""
+            mult = best_fixed_method.replace("Fixed ", "$\\times$")
+
+            lines.append(
+                f"{noise_col} & {OPTIMIZER_DISPLAY[optimizer]} & {mult} & "
+                f"{fmt_pm(cmp.baseline_mean, cmp.baseline_std)} & "
+                f"{fmt_pm(cmp.method_mean, cmp.method_std)} & "
+                f"{fmt_diff_ci(cmp.diff_mean, cmp.diff_ci_low, cmp.diff_ci_high)} & "
+                f"{fmt_pvalue(cmp.p_value)} \\\\"
+            )
+
+    lines.append("\\bottomrule")
+    lines.append("\\end{tabular}")
+    lines.append("}")
+    lines.append(
+        "\\caption{Paired seed-level comparison between AEES and the "
+        "retrospectively best fixed-multiplier control for noisy \\cifar{}. "
+        "The best fixed multiplier is selected from the AEES candidate set "
+        "($\\times$0.5, $\\times$1.0, $\\times$2.0) separately for each "
+        "noise--optimizer setting using mean peak validation accuracy. Fixed "
+        "Best and AEES Best are peak validation accuracy (mean $\\pm$ standard "
+        "deviation across the five seeds). $\\Delta$ Best is AEES minus the best "
+        "fixed control in percentage points; 95\\% confidence intervals are "
+        "percentile bootstrap intervals (10{,}000 resamples) over the paired "
+        "seed-level differences. Paired $t$-test $p$-values are two-sided and "
+        "exploratory given $n=5$.}"
+    )
+    lines.append("\\label{tab:supp-cifar-aees-vs-best-fixed-stats}")
+    lines.append("\\end{table}")
+
+    return "\n".join(lines)
+
+
 def build_summary_table(agg: Dict[Tuple[str, str, str], AggMetrics]) -> str:
     lines: List[str] = []
 
@@ -548,6 +668,11 @@ def main() -> None:
     detailed_path.write_text(detailed_table)
     print(f"Wrote {detailed_path}")
 
+    aees_vs_fixed_table = build_aees_vs_best_fixed_stats_table(runs, agg)
+    aees_vs_fixed_path = OUTPUT_DIR / "cifar_noisy_aees_vs_best_fixed_stats_table.tex"
+    aees_vs_fixed_path.write_text(aees_vs_fixed_table)
+    print(f"Wrote {aees_vs_fixed_path}")
+
     summary_csv_path = OUTPUT_DIR / "cifar_noisy_fixed_lr_ablation_summary.csv"
     write_summary_csv(agg, summary_csv_path)
     print(f"Wrote {summary_csv_path}")
@@ -555,6 +680,9 @@ def main() -> None:
     detailed_csv_path = OUTPUT_DIR / "cifar_noisy_fixed_lr_ablation_detailed.csv"
     write_detailed_csv(agg, detailed_csv_path)
     print(f"Wrote {detailed_csv_path}")
+
+    print("\nGenerated supplementary stats .tex file(s):")
+    print(f"  {aees_vs_fixed_path}")
 
 
 if __name__ == "__main__":
