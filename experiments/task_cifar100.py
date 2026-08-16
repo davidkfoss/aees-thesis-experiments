@@ -41,6 +41,16 @@ from experiments.utils.flops import (  # noqa: E402
 )
 from experiments.utils.metrics import RunResult  # noqa: E402
 from experiments.utils.results import save_run_result  # noqa: E402
+from experiments.utils.cifar_attribution_controls import (  # noqa: E402
+    FeedbackFreeReward,
+    LR_MULTIPLIERS,
+    NOISE_CANDIDATES,
+    NOISE_REGIMES,
+    PrecomputedScheduleController,
+    build_frequency_matched_plan,
+    build_uniform_random_plan,
+    episode_count_from_total_steps,
+)
 
 if TYPE_CHECKING:
     from torchvision.datasets import CIFAR100
@@ -48,7 +58,13 @@ if TYPE_CHECKING:
 
 LabelNoiseType = Literal["none", "symmetric", "asymmetric"]
 OptimizerName = Literal["AdamW", "SGD"]
-ControlMode = Literal["baseline", "adaptive", "random"]
+ControlMode = Literal[
+    "baseline",
+    "adaptive",
+    "random",
+    "uniform-random",
+    "frequency-matched",
+]
 AdaptiveOptimizer = AdaptiveModeAdamW | AdaptiveModeSGD
 LABEL_NOISE_TYPES: tuple[LabelNoiseType, ...] = (
     "none",
@@ -59,7 +75,10 @@ CONTROL_MODE_NAMES: dict[ControlMode, str] = {
     "baseline": "Baseline",
     "adaptive": "AdaptiveScheduler",
     "random": "RandomScheduler",
+    "uniform-random": "UniformRandomOpenLoop",
+    "frequency-matched": "FrequencyMatchedOpenLoop",
 }
+OPEN_LOOP_CONTROL_MODES = {"uniform-random", "frequency-matched"}
 
 CIFAR100_SUPERCLASS_TO_FINE: dict[str, list[int]] = {
     "aquatic_mammals": [4, 30, 55, 72, 95],
@@ -170,6 +189,8 @@ class ExperimentConfig:
     model_name: str = "resnet18"
     task_name: str = "cifar100"
     run_tag: str | None = None
+    schedule_seed: int | None = None
+    aees_trace_root: str = "results/cifar_noisy"
 
 
 @dataclass
@@ -185,6 +206,7 @@ class TrainingComponents:
     noise_candidates: list[float] | None = None
     lr_controller: object | None = None
     noise_controller: object | list[object] | None = None
+    open_loop_policy_metadata: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -218,9 +240,15 @@ def parse_args() -> ExperimentConfig:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--control-mode",
-        choices=["baseline", "adaptive", "random"],
+        choices=[
+            "baseline",
+            "adaptive",
+            "random",
+            "uniform-random",
+            "frequency-matched",
+        ],
         default=str(DEFAULT_CONFIG["control_mode"]),
-        help="Control regime: baseline, adaptive AEES, or random.",
+        help="Control regime, including reward-free open-loop attribution controls.",
     )
     parser.add_argument("--epochs", type=int,
                         default=int(DEFAULT_CONFIG["epochs"]))
@@ -313,6 +341,21 @@ def parse_args() -> ExperimentConfig:
         default=float(DEFAULT_CONFIG["label_noise_rate"]),
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--schedule-seed",
+        type=int,
+        default=None,
+        help=(
+            "Dedicated local RNG seed for an open-loop schedule. "
+            "Defaults to 10000 + the paired training seed."
+        ),
+    )
+    parser.add_argument(
+        "--aees-trace-root",
+        type=str,
+        default="results/cifar_noisy",
+        help="Root containing completed AEES traces for frequency matching.",
+    )
     parser.add_argument("--run-tag", type=str,
                         default=DEFAULT_CONFIG["run_tag"])
     parser.add_argument(
@@ -369,6 +412,25 @@ def parse_args() -> ExperimentConfig:
         else [0.0]
     )
 
+    if args.control_mode in OPEN_LOOP_CONTROL_MODES:
+        if args.lr_scheduler != "none":
+            raise ValueError("Open-loop attribution controls require --lr-scheduler none.")
+        if args.context_mode != "none":
+            raise ValueError("Open-loop attribution controls require --context-mode none.")
+        if args.structured_control_mode != "independent":
+            raise ValueError(
+                "Open-loop attribution controls require --structured-control-mode independent."
+            )
+        if tuple(lr_candidates) != LR_MULTIPLIERS:
+            raise ValueError(
+                "Open-loop attribution controls require --lr-candidates 0.5,1.0,2.0."
+            )
+        if tuple(noise_candidates) != NOISE_CANDIDATES:
+            raise ValueError(
+                "Open-loop attribution controls require --noise-candidates 0.0."
+            )
+        resolve_noise_regime(args.label_noise_type, args.label_noise_rate)
+
     output = args.output or build_default_output_path(
         args.control_mode,
         args.optimizer,
@@ -404,6 +466,16 @@ def parse_args() -> ExperimentConfig:
         num_workers=int(DEFAULT_CONFIG["num_workers"]),
         data_dir=str(DEFAULT_CONFIG["data_dir"]),
         run_tag=args.run_tag,
+        schedule_seed=(
+            (
+                args.schedule_seed
+                if args.schedule_seed is not None
+                else 10_000 + args.seed
+            )
+            if args.control_mode in OPEN_LOOP_CONTROL_MODES
+            else None
+        ),
+        aees_trace_root=args.aees_trace_root,
     )
 
 
@@ -603,6 +675,20 @@ def label_noise_enabled(config: ExperimentConfig) -> bool:
     return config.label_noise_type != "none" and config.label_noise_rate > 0.0
 
 
+def resolve_noise_regime(label_noise_type: str, label_noise_rate: float) -> str:
+    """Map the runner's corruption fields to the stable attribution-cell slug."""
+
+    for regime, (expected_type, expected_rate) in NOISE_REGIMES.items():
+        if label_noise_type == expected_type and math.isclose(
+            label_noise_rate, expected_rate, rel_tol=0.0, abs_tol=1e-12
+        ):
+            return regime
+    raise ValueError(
+        "Open-loop attribution controls require one of: asymmetric 0.2, "
+        "symmetric 0.2, or symmetric 0.4 label noise."
+    )
+
+
 def build_model(device: torch.device) -> nn.Module:
     """Build a CIFAR-adapted ResNet-18."""
 
@@ -727,6 +813,7 @@ def build_wrapped_optimizer(
 def build_method_components(
     config: ExperimentConfig,
     model: nn.Module,
+    total_training_steps: int | None = None,
 ) -> TrainingComponents:
     """Build optimizer, controller, and episode manager objects for one run."""
 
@@ -738,13 +825,6 @@ def build_method_components(
             method_name=control_mode_name(config.control_mode),
             controller_logs=None,
         )
-
-    reward_fn = NormalizedLossImprovementReward(
-        reward_epsilon=config.reward_epsilon,
-        reward_instability_lambda=config.reward_instability_lambda,
-        reward_clip_min=config.reward_clip_min,
-        reward_clip_max=config.reward_clip_max,
-    )
 
     lr_candidates = list(config.lr_candidates)
     noise_candidates = list(config.noise_candidates)
@@ -758,36 +838,93 @@ def build_method_components(
         noise_std=noise_candidates[0],
     )
     optimizer = build_wrapped_optimizer(config, parameters, initial_mode)
-    lr_controller = build_axis_controller(
-        arm_values=lr_candidates,
-        control_mode=config.control_mode,
-        random_seed=config.seed,
-        context_mode=config.context_mode,
-    )
-    if config.structured_control_mode == "independent":
-        noise_controller: object | list[object] = build_axis_controller(
-            arm_values=noise_candidates,
-            control_mode=config.control_mode,
-            random_seed=config.seed + 101,
-            context_mode=config.context_mode,
+
+    open_loop_metadata: dict[str, object] | None = None
+    if config.control_mode in OPEN_LOOP_CONTROL_MODES:
+        if total_training_steps is None or total_training_steps <= 0:
+            raise ValueError(
+                "Open-loop attribution controls require the resolved total training steps."
+            )
+        if config.schedule_seed is None:
+            raise ValueError("Open-loop attribution controls require a schedule seed.")
+        episode_count = episode_count_from_total_steps(
+            total_training_steps,
+            config.episode_length,
         )
-    elif len(lr_candidates) == 1:
-        noise_controller = build_axis_controller(
-            arm_values=noise_candidates,
-            control_mode=config.control_mode,
-            random_seed=config.seed + 101,
-            context_mode=config.context_mode,
+        if config.control_mode == "uniform-random":
+            plan = build_uniform_random_plan(
+                episode_count=episode_count,
+                schedule_seed=config.schedule_seed,
+            )
+        else:
+            trace_root = Path(config.aees_trace_root)
+            if not trace_root.is_absolute():
+                trace_root = PROJECT_ROOT / trace_root
+            plan = build_frequency_matched_plan(
+                trace_root=trace_root,
+                noise_regime=resolve_noise_regime(
+                    config.label_noise_type,
+                    config.label_noise_rate,
+                ),
+                optimizer=config.optimizer,
+                target_seed=config.seed,
+                episode_count=episode_count,
+                schedule_seed=config.schedule_seed,
+            )
+        lr_controller = PrecomputedScheduleController(
+            plan.lr_indices,
+            n_arms=len(lr_candidates),
+        )
+        noise_controller: object | list[object] | None = None
+        reward_fn: object = FeedbackFreeReward()
+        open_loop_metadata = plan.to_metadata()
+        open_loop_metadata["training_seeds"] = {
+            "model": config.seed,
+            "data_order_and_augmentation": config.seed,
+            "label_corruption": config.seed,
+            "optimizer_noise": config.seed,
+        }
+        print(
+            f"precomputed {plan.policy} schedule: episodes={plan.episode_count} "
+            f"schedule_seed={plan.schedule_seed} counts={list(plan.integer_counts)}"
         )
     else:
-        noise_controller = [
-            build_axis_controller(
+        reward_fn = NormalizedLossImprovementReward(
+            reward_epsilon=config.reward_epsilon,
+            reward_instability_lambda=config.reward_instability_lambda,
+            reward_clip_min=config.reward_clip_min,
+            reward_clip_max=config.reward_clip_max,
+        )
+        lr_controller = build_axis_controller(
+            arm_values=lr_candidates,
+            control_mode=config.control_mode,
+            random_seed=config.seed,
+            context_mode=config.context_mode,
+        )
+        if config.structured_control_mode == "independent":
+            noise_controller = build_axis_controller(
                 arm_values=noise_candidates,
                 control_mode=config.control_mode,
-                random_seed=config.seed + 101 + lr_index,
+                random_seed=config.seed + 101,
                 context_mode=config.context_mode,
             )
-            for lr_index in range(len(lr_candidates))
-        ]
+        elif len(lr_candidates) == 1:
+            noise_controller = build_axis_controller(
+                arm_values=noise_candidates,
+                control_mode=config.control_mode,
+                random_seed=config.seed + 101,
+                context_mode=config.context_mode,
+            )
+        else:
+            noise_controller = [
+                build_axis_controller(
+                    arm_values=noise_candidates,
+                    control_mode=config.control_mode,
+                    random_seed=config.seed + 101 + lr_index,
+                    context_mode=config.context_mode,
+                )
+                for lr_index in range(len(lr_candidates))
+            ]
     episode_manager = StructuredEpisodeManager(
         lr_candidates=lr_candidates,
         noise_candidates=noise_candidates,
@@ -800,6 +937,7 @@ def build_method_components(
         context_trend_window=config.context_trend_window,
         context_trend_epsilon=config.context_trend_epsilon,
         ema_alpha=config.ema_alpha,
+        total_training_steps=total_training_steps,
     )
     return TrainingComponents(
         optimizer=optimizer,
@@ -819,6 +957,7 @@ def build_method_components(
         noise_candidates=noise_candidates,
         lr_controller=lr_controller,
         noise_controller=noise_controller,
+        open_loop_policy_metadata=open_loop_metadata,
     )
 
 
@@ -1131,6 +1270,21 @@ def build_result(
         episode_logs = build_episode_logs(
             components.episode_manager.get_logs())
 
+    open_loop_metadata = None
+    if components.open_loop_policy_metadata is not None:
+        if not isinstance(episode_logs, dict):
+            raise RuntimeError("Open-loop run did not produce episode logs.")
+        executed = episode_logs.get("selected_lr_values")
+        planned = components.open_loop_policy_metadata.get("planned_lr_multipliers")
+        if not isinstance(executed, list) or executed != planned:
+            raise RuntimeError(
+                "Executed open-loop LR sequence does not match the precomputed schedule."
+            )
+        open_loop_metadata = dict(components.open_loop_policy_metadata)
+        open_loop_metadata["executed_lr_multipliers"] = list(executed)
+        if isinstance(components.lr_controller, PrecomputedScheduleController):
+            open_loop_metadata["controller_state"] = components.lr_controller.get_state()
+
     config_dict = asdict(config)
     config_dict["device"] = "cuda" if torch.cuda.is_available() else "cpu"
     config_dict["pin_memory"] = torch.cuda.is_available()
@@ -1145,6 +1299,8 @@ def build_result(
     config_dict["scheduler_t_max"] = resolve_scheduler_t_max(config)
     config_dict["scheduler_active"] = config.lr_scheduler != "none"
     config_dict["warmup_epochs"] = config.warmup_epochs
+    if open_loop_metadata is not None:
+        config_dict["open_loop_policy"] = open_loop_metadata
     if label_noise_diagnostics is not None:
         diagnostics = config_dict.setdefault("diagnostics", {})
         if not isinstance(diagnostics, dict):
@@ -1227,6 +1383,7 @@ def run_experiment(config: ExperimentConfig) -> RunResult:
     components = build_method_components(
         config,
         model,
+        total_training_steps=len(train_loader) * config.epochs,
     )
     lr_scheduler = build_lr_scheduler(config, components.optimizer)
 
@@ -1363,6 +1520,11 @@ def build_structured_controller_logs_container(
     if control_mode == "random":
         logs["non_contextual_random_note"] = (
             "RandomScheduler keeps random controllers non-contextual; context is logged per episode only."
+        )
+    if control_mode in OPEN_LOOP_CONTROL_MODES:
+        logs["open_loop_note"] = (
+            "The complete LR sequence was generated before training; controller feedback "
+            "callbacks are ignored and no bandit statistics are updated."
         )
     return logs
 
