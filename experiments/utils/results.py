@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
 import json
+import os
 from pathlib import Path
 import platform as platform_lib
 import socket
 import statistics
 import sys
+import tempfile
 from typing import Any
 
 import torch
@@ -27,14 +29,29 @@ def result_to_dict(result: object) -> dict[str, Any]:
 
 
 def save_run_result(result: object, output_path: str | Path) -> None:
-    """Persist one run result as stable, indented JSON."""
+    """Persist one run result atomically as stable, indented JSON."""
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(result_to_dict(result), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    payload = json.dumps(result_to_dict(result), indent=2, sort_keys=True) + "\n"
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_file.write(payload)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+            temporary_path = Path(temporary_file.name)
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
 
 
 def _to_jsonable(value: object) -> Any:

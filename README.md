@@ -173,6 +173,11 @@ Tests covering the experiment-side `RunResult` runtime-metric derivation:
 uv run pytest tests/test_runtime_metrics.py
 ```
 
+The remaining CIFAR-100 attribution controls (uniform-random and
+leave-one-seed-out frequency-matched), five-GPU launcher, resume behavior, and
+aggregation workflow are documented in
+[`docs/cifar_attribution_controls.md`](docs/cifar_attribution_controls.md).
+
 Library-side tests for controllers, episode management, rewards, and optimizer wrapping live with the `pulseopt` source repository.
 
 ## Layout
